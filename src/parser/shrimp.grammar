@@ -1,0 +1,52 @@
+@external propSource highlighting from "./highlight.js"
+
+@top Program { expr* }
+
+@skip { space }
+
+@tokens {
+  @precedence { fn Boolean Identifier }
+
+  space { @whitespace+ }
+  Number { $[0-9]+ ('.' $[0-9]+)? }
+  Boolean { "true" | "false" }
+  String { '"' !["]* '"' }
+  Identifier { $[A-Za-z_]$[A-Za-z_0-9-]* }
+  fn { "fn" }
+  arrow { "->" }
+  equals { "=" }
+  "+"
+  "-"
+  "*"
+  "/"
+  leftParen { "(" }
+  rightParen { ")" }
+}
+
+@precedence {
+  multiplicative @left,
+  additive @left,
+  function @right
+  assignment @right
+}
+
+expr {
+  Assignment |
+  Function |
+  BinOp |
+  atom
+}
+
+BinOp { 
+  expr !multiplicative "*" expr |
+  expr !multiplicative "/" expr |
+  expr !additive "+" expr |
+  expr !additive "-" expr
+}
+
+Params { Identifier* }
+Function { !function fn Params arrow expr }
+
+atom { Identifier | Number | String | Boolean | leftParen expr rightParen }
+
+Assignment { Identifier !assignment equals expr }
