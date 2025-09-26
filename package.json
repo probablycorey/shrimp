@@ -4,22 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/server.tsx",
+    "serve": "bun --hot src/server/server.tsx",
     "generate-parser": "lezer-generator src/parser/shrimp.grammar --typeScript -o src/parser/shrimp.ts"
   },
   "dependencies": {
+    "@codemirror/view": "^6.38.3",
+    "@lezer/generator": "^1.8.0",
     "bun-plugin-tailwind": "^0.0.15",
-    "react": "^19",
-    "react-dom": "^19",
-    "tailwindcss": "^4.1.11",
-    "@lezer/generator": "^1.8.0"
+    "codemirror": "^6.0.2",
+    "hono": "^4.9.8",
+    "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
     "@lezer/highlight": "^1.2.1",
     "@lezer/lr": "^1.4.2",
-    "@types/bun": "latest",
-    "@types/react": "^19",
-    "@types/react-dom": "^19"
+    "@types/bun": "latest"
   },
   "prettier": {
     "semi": false,
