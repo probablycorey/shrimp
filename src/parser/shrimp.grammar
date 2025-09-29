@@ -1,17 +1,14 @@
 @external propSource highlighting from "./highlight.js"
-
 @top Program { expr* }
 
 @skip { space }
 
 @tokens {
-  @precedence { fn Boolean Identifier }
-
   space { @whitespace+ }
   Number { $[0-9]+ ('.' $[0-9]+)? }
   Boolean { "true" | "false" }
   String { '"' !["]* '"' }
-  Identifier { $[A-Za-z_]$[A-Za-z_0-9-]* }
+  
   fn[@name=Keyword] { "fn" }
   equals[@name=Operator] { "=" }
   ":"[@name=Colon]
@@ -21,6 +18,10 @@
   "/"[@name=Operator]
   leftParen[@name=Paren] { "(" }
   rightParen[@name=Paren] { ")" }
+}
+
+@external tokens identifierTokenizer from "./tokenizers" { 
+  Identifier 
 }
 
 @precedence {

@@ -1,9 +1,27 @@
-import { regenerateParser } from '@/parser/test-helper'
-import { expect, beforeAll, describe, test } from 'bun:test'
+import { expect, describe, test } from 'bun:test'
+
+describe('Identifier', () => {
+  test('parses simple identifiers', () => {
+    expect('hyphenated-var').toMatchTree(`Identifier hyphenated-var`)
+    expect('var').toMatchTree(`Identifier var`)
+    expect('var123').toMatchTree(`Identifier var123`)
+  })
+
+  test('fails on underscores and capital letters', () => {
+    expect('myVar').toFailParse()
+    expect('underscore_var').toFailParse()
+    expect('_leadingUnderscore').toFailParse()
+    expect('trailingUnderscore_').toFailParse()
+    expect('mixed-123_var').toFailParse()
+  })
+
+  test('parses identifiers with emojis', () => {
+    expect('var😊').toMatchTree(`Identifier var😊`)
+    expect('😊').toMatchTree(`Identifier 😊`)
+  })
+})
 
 describe('BinOp', () => {
-  beforeAll(() => regenerateParser())
-
   test('addition tests', () => {
     expect('2 + 3').toMatchTree(`
       BinOp
@@ -60,8 +78,6 @@ describe('BinOp', () => {
 })
 
 describe('Fn', () => {
-  beforeAll(() => regenerateParser())
-
   test('parses function with single parameter', () => {
     expect('fn x: x + 1').toMatchTree(`
       Function
@@ -109,8 +125,6 @@ describe('Fn', () => {
 })
 
 describe('Identifier', () => {
-  beforeAll(() => regenerateParser())
-
   test('parses hyphenated identifiers correctly', () => {
     expect('my-var - another-var').toMatchTree(`
       BinOp
@@ -133,8 +147,6 @@ describe('Identifier', () => {
 })
 
 describe('Assignment', () => {
-  beforeAll(() => regenerateParser())
-
   test('parses assignment with addition', () => {
     expect('x = 5 + 3').toMatchTree(`
       Assignment
@@ -165,8 +177,6 @@ describe('Assignment', () => {
 })
 
 describe('Parentheses', () => {
-  beforeAll(() => regenerateParser())
-
   test('parses expressions with parentheses correctly', () => {
     expect('(2 + 3) * 4').toMatchTree(`
       BinOp
@@ -205,8 +215,6 @@ describe('Parentheses', () => {
 })
 
 describe('multiline', () => {
-  beforeAll(() => regenerateParser())
-
   test('parses multiline expressions', () => {
     expect(`
       5 + 4

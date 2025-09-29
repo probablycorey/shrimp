@@ -1,25 +1,34 @@
-import { beforeAll, expect } from 'bun:test'
+import { expect } from 'bun:test'
 import { Tree, TreeCursor } from '@lezer/common'
-import grammarFile from './shrimp.grammar'
-import { parser } from './shrimp.ts'
+import { parser } from './parser/shrimp.ts'
 import { $ } from 'bun'
 
-// Regenerate the parser if the grammar file is newer than the generated parser
-// This makes --watch work without needing to manually regenerate the parser
-export const regenerateParser = async () => {
-  const grammarStat = await Bun.file('src/parser/shrimp.grammar').stat()
-  const jsStat = await Bun.file('src/parser/shrimp.ts').stat()
+const regenerateParser = async () => {
+  let generate = true
+  try {
+    const grammarStat = await Bun.file('./src/parser/shrimp.grammar').stat()
+    const tokenizerStat = await Bun.file('./src/parser/tokenizers.ts').stat()
+    const parserStat = await Bun.file('./src/parser/shrimp.ts').stat()
 
-  if (grammarStat.mtime <= jsStat.mtime) return
-
-  console.log(`Regenerating parser from ${grammarFile}...`)
-  await $`bun generate-parser `
+    if (grammarStat.mtime <= parserStat.mtime && tokenizerStat.mtime <= parserStat.mtime) {
+      generate = false
+    }
+  } catch (e) {
+    console.error('Error checking or regenerating parser:', e)
+  } finally {
+    if (generate) {
+      await $`bun generate-parser`
+    }
+  }
 }
+
+await regenerateParser()
 
 // Type declaration for TypeScript
 declare module 'bun:test' {
   interface Matchers<T> {
     toMatchTree(expected: string): T
+    toFailParse(): T
   }
 }
 
@@ -42,6 +51,45 @@ expect.extend({
     } catch (error) {
       return {
         message: () => (error as Error).message,
+        pass: false,
+      }
+    }
+  },
+  toFailParse(received: unknown) {
+    if (typeof received !== 'string') {
+      return {
+        message: () => 'toMatchTree can only be used with string values',
+        pass: false,
+      }
+    }
+
+    try {
+      const tree = parser.parse(received)
+      let hasErrors = false
+      tree.iterate({
+        enter(n) {
+          if (n.type.isError) {
+            hasErrors = true
+            return false
+          }
+        },
+      })
+
+      if (hasErrors) {
+        return {
+          message: () => `Expected input to fail parsing, and it did.`,
+          pass: true,
+        }
+      } else {
+        const actual = treeToString(tree, received)
+        return {
+          message: () => `Expected input to fail parsing, but it parsed successfully:\n${actual}`,
+          pass: false,
+        }
+      }
+    } catch (error) {
+      return {
+        message: () => `Parsing threw an error: ${(error as Error).message}`,
         pass: false,
       }
     }
