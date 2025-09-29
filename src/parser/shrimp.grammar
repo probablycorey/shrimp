@@ -12,15 +12,15 @@
   Boolean { "true" | "false" }
   String { '"' !["]* '"' }
   Identifier { $[A-Za-z_]$[A-Za-z_0-9-]* }
-  fn { "fn" }
-  arrow { "->" }
-  equals { "=" }
-  "+"
-  "-"
-  "*"
-  "/"
-  leftParen { "(" }
-  rightParen { ")" }
+  fn[@name=Keyword] { "fn" }
+  equals[@name=Operator] { "=" }
+  ":"[@name=Colon]
+  "+"[@name=Operator]
+  "-"[@name=Operator]
+  "*"[@name=Operator]
+  "/"[@name=Operator]
+  leftParen[@name=Paren] { "(" }
+  rightParen[@name=Paren] { ")" }
 }
 
 @precedence {
@@ -45,7 +45,7 @@ BinOp {
 }
 
 Params { Identifier* }
-Function { !function fn Params arrow expr }
+Function { !function fn Params ":" expr }
 
 atom { Identifier | Number | String | Boolean | leftParen expr rightParen }
 

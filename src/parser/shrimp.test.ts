@@ -1,59 +1,59 @@
-import { expectTree, regenerateParser } from '@/parser/test-helper'
-import { beforeAll, describe, test } from 'bun:test'
+import { regenerateParser } from '@/parser/test-helper'
+import { expect, beforeAll, describe, test } from 'bun:test'
 
 describe('BinOp', () => {
   beforeAll(() => regenerateParser())
 
   test('addition tests', () => {
-    expectTree('2 + 3').toMatch(`
+    expect('2 + 3').toMatchTree(`
       BinOp
         Number 2
-        +
+        Operator +
         Number 3
     `)
   })
 
   test('subtraction tests', () => {
-    expectTree('5 - 2').toMatch(`
+    expect('5 - 2').toMatchTree(`
       BinOp
         Number 5
-        -
+        Operator -
         Number 2
     `)
   })
 
   test('multiplication tests', () => {
-    expectTree('4 * 3').toMatch(`
+    expect('4 * 3').toMatchTree(`
       BinOp
         Number 4
-        *
+        Operator *
         Number 3
     `)
   })
 
   test('division tests', () => {
-    expectTree('8 / 2').toMatch(`
+    expect('8 / 2').toMatchTree(`
       BinOp
         Number 8
-        /
+        Operator /
         Number 2
     `)
   })
 
   test('mixed operations with precedence', () => {
-    expectTree('2 + 3 * 4 - 5 / 1').toMatch(`
+    expect('2 + 3 * 4 - 5 / 1').toMatchTree(`
       BinOp
         BinOp
           Number 2
-          +
+          Operator +
           BinOp
             Number 3
-            *
+            Operator *
             Number 4
-        -
+        Operator -
         BinOp
           Number 5
-          /
+          Operator /
           Number 1
     `)
   })
@@ -63,39 +63,47 @@ describe('Fn', () => {
   beforeAll(() => regenerateParser())
 
   test('parses function with single parameter', () => {
-    expectTree('fn x -> x + 1').toMatch(`
+    expect('fn x: x + 1').toMatchTree(`
       Function
+        Keyword fn
         Params
           Identifier x
+        Colon :
         BinOp
           Identifier x
-          +
+          Operator +
           Number 1`)
   })
 
   test('parses function with multiple parameters', () => {
-    expectTree('fn x y -> x * y').toMatch(`
+    expect('fn x y: x * y').toMatchTree(`
       Function
+        Keyword fn
         Params
           Identifier x
           Identifier y
+        Colon :
         BinOp
           Identifier x
-          *
+          Operator *
           Identifier y`)
   })
 
   test('parses nested functions', () => {
-    expectTree('fn x -> fn y -> x + y').toMatch(`
+    expect('fn x: fn y: x + y').toMatchTree(`
       Function
+        Keyword fn
         Params
           Identifier x
+        Colon :
         Function
+          Keyword fn
           Params
             Identifier y
+          Colon :
           BinOp
             Identifier x
-            +
+            Operator +
             Identifier y`)
   })
 })
@@ -104,22 +112,22 @@ describe('Identifier', () => {
   beforeAll(() => regenerateParser())
 
   test('parses hyphenated identifiers correctly', () => {
-    expectTree('my-var - another-var').toMatch(`
+    expect('my-var - another-var').toMatchTree(`
       BinOp
         Identifier my-var
-        -
+        Operator -
         Identifier another-var`)
 
-    expectTree('double--trouble - another-var').toMatch(`
+    expect('double--trouble - another-var').toMatchTree(`
       BinOp
         Identifier double--trouble
-        -
+        Operator -
         Identifier another-var`)
 
-    expectTree('tail-- - another-var').toMatch(`
+    expect('tail-- - another-var').toMatchTree(`
       BinOp
         Identifier tail--
-        -
+        Operator -
         Identifier another-var`)
   })
 })
@@ -128,26 +136,30 @@ describe('Assignment', () => {
   beforeAll(() => regenerateParser())
 
   test('parses assignment with addition', () => {
-    expectTree('x = 5 + 3').toMatch(`
+    expect('x = 5 + 3').toMatchTree(`
       Assignment
         Identifier x
+        Operator =
         BinOp
           Number 5
-          +
+          Operator +
           Number 3`)
   })
 
   test('parses assignment with functions', () => {
-    expectTree('add = fn a b -> a + b').toMatch(`
+    expect('add = fn a b: a + b').toMatchTree(`
       Assignment
         Identifier add
+        Operator =
         Function
+          Keyword fn
           Params
             Identifier a
             Identifier b
+          Colon :
           BinOp
             Identifier a
-            +
+            Operator +
             Identifier b`)
   })
 })
@@ -156,30 +168,38 @@ describe('Parentheses', () => {
   beforeAll(() => regenerateParser())
 
   test('parses expressions with parentheses correctly', () => {
-    expectTree('(2 + 3) * 4').toMatch(`
+    expect('(2 + 3) * 4').toMatchTree(`
       BinOp
+        Paren (
         BinOp
           Number 2
-          +
+          Operator +
           Number 3
-        *
+        Paren )
+        Operator *
         Number 4`)
   })
 
   test('parses nested parentheses correctly', () => {
-    expectTree('((1 + 2) * (3 - 4)) / 5').toMatch(`
+    expect('((1 + 2) * (3 - 4)) / 5').toMatchTree(`
       BinOp
+        Paren (
         BinOp
+          Paren (
           BinOp
             Number 1
-            +
+            Operator +
             Number 2
-          *
+          Paren )
+          Operator *
+          Paren (
           BinOp
             Number 3
-            -
+            Operator -
             Number 4
-        /
+          Paren )
+        Paren )
+        Operator /
         Number 5`)
   })
 })
@@ -188,20 +208,22 @@ describe('multiline', () => {
   beforeAll(() => regenerateParser())
 
   test('parses multiline expressions', () => {
-    expectTree(`
+    expect(`
       5 + 4
-      fn x -> x - 1
-    `).toMatch(`
+      fn x: x - 1
+    `).toMatchTree(`
       BinOp
         Number 5
-        +
+        Operator +
         Number 4
       Function
+        Keyword fn
         Params
           Identifier x
+        Colon :
         BinOp
           Identifier x
-          -
+          Operator -
           Number 1
     `)
   })

@@ -3,16 +3,16 @@ import {LRParser} from "@lezer/lr"
 import {highlighting} from "./highlight.js"
 export const parser = LRParser.deserialize({
   version: 14,
-  states: "$OQVQPOOOkQPO'#CsO!fQQO'#C`O!nQPO'#CjOOQO'#Cs'#CsOVQPO'#CsOOQO'#Co'#CoQVQPOOOVQPO,58xOOQO'#Ck'#CkO#cQQO'#CaO#kQQO,58zOVQPO,58|OVQPO,58|O#pQPO,59_OOQO-E6h-E6hO$RQPO1G.dOOQO-E6i-E6iOVQPO1G.fOOQO1G.h1G.hO$yQPO1G.hOOQO1G.y1G.yO%qQPO7+$Q",
-  stateData: "&n~ObOS~ORPOZSO[SO]SOeQOhTO~OdWORgXVgXWgXXgXYgXZgX[gX]gX`gXegXhgXigX~ORXOfTP~OV[OW[OX]OY]OR^XZ^X[^X]^X`^Xe^Xh^X~ORXOfTX~OfbO~OV[OW[OX]OY]OieO~OV[OW[OX]OY]ORQiZQi[Qi]Qi`QieQihQiiQi~OV[OW[ORUiXUiYUiZUi[Ui]Ui`UieUihUiiUi~OV[OW[OX]OY]ORSqZSq[Sq]Sq`SqeSqhSqiSq~Oe]R]~",
-  goto: "!fhPPiPiriPPPPPPPu{PPP!RPPPi_UOTVW[]bRZQQVOR_VQYQRaYSROVQ^TQ`WQc[Qd]Rfb",
-  nodeNames: "⚠ Program Assignment Identifier Function Params BinOp * / + - Number String Boolean",
+  states: "$OQVQPOOOkQPO'#CuO!fQPO'#CaO!nQPO'#CoOOQO'#Cu'#CuOVQPO'#CuOOQO'#Ct'#CtQVQPOOOVQPO,58xOOQO'#Cp'#CpO#cQPO'#CcO#kQPO,58{OVQPO,59POVQPO,59PO#pQPO,59aOOQO-E6m-E6mO$RQPO1G.dOOQO-E6n-E6nOVQPO1G.gOOQO1G.k1G.kO$yQPO1G.kOOQO1G.{1G.{O%qQPO7+$R",
+  stateData: "&n~OgOS~ORPOUQO^SO_SO`SOaTO~OSWORiXUiXYiXZiX[iX]iX^iX_iX`iXaiXeiXbiX~ORXOWVP~OY[OZ[O[]O]]ORcXUcX^cX_cX`cXacXecX~ORXOWVX~OWbO~OY[OZ[O[]O]]ObeO~OY[OZ[O[]O]]ORQiUQi^Qi_Qi`QiaQieQibQi~OY[OZ[ORXiUXi[Xi]Xi^Xi_Xi`XiaXieXibXi~OY[OZ[O[]O]]ORTqUTq^Tq_Tq`TqaTqeTqbTq~OU`R`~",
+  goto: "!hjPPkPPkPtPkPPPPPPPPPw}PPP!Tk_UOTVW[]bRZQQVOR_VQYQRaYSROVQ^TQ`WQc[Qd]Rfb",
+  nodeNames: "⚠ Program Assignment Identifier Operator Function Keyword Params Colon BinOp Operator Operator Operator Operator Number String Boolean Paren Paren",
   maxTerm: 25,
   propSources: [highlighting],
   skippedNodes: [0],
   repeatNodeCount: 2,
-  tokenData: "*f~RjX^!spq!srs#hxy$Vyz$[z{$a{|$f}!O$k!P!Q$x!Q![$}!_!`%h!c!}%m#R#S%m#T#Y%m#Y#Z&R#Z#h%m#h#i)`#i#o%m#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~!xYb~X^!spq!s#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~#kTOr#hrs#zs;'S#h;'S;=`$P<%lO#h~$PO[~~$SP;=`<%l#h~$[Oh~~$aOi~~$fOV~~$kOX~R$pPYP!`!a$sQ$xOfQ~$}OW~~%SQZ~!O!P%Y!Q![$}~%]P!Q![%`~%ePZ~!Q![%`~%mOd~~%rTR~}!O%m!Q![%m!c!}%m#R#S%m#T#o%m~&WWR~}!O%m!Q![%m!c!}%m#R#S%m#T#U&p#U#b%m#b#c(x#c#o%m~&uVR~}!O%m!Q![%m!c!}%m#R#S%m#T#`%m#`#a'[#a#o%m~'aVR~}!O%m!Q![%m!c!}%m#R#S%m#T#g%m#g#h'v#h#o%m~'{VR~}!O%m!Q![%m!c!}%m#R#S%m#T#X%m#X#Y(b#Y#o%m~(iT]~R~}!O%m!Q![%m!c!}%m#R#S%m#T#o%m~)PTe~R~}!O%m!Q![%m!c!}%m#R#S%m#T#o%m~)eVR~}!O%m!Q![%m!c!}%m#R#S%m#T#f%m#f#g)z#g#o%m~*PVR~}!O%m!Q![%m!c!}%m#R#S%m#T#i%m#i#j'v#j#o%m",
-  tokenizers: [0, 1],
+  tokenData: "*f~RkX^!vpq!vrs#kxy$Yyz$_z{$d{|$i}!O$n!P!Q$s!Q![$x![!]%c!_!`%h!c!}%m#R#S%m#T#Y%m#Y#Z&R#Z#h%m#h#i)`#i#o%m#y#z!v$f$g!v#BY#BZ!v$IS$I_!v$I|$JO!v$JT$JU!v$KV$KW!v&FU&FV!v~!{Yg~X^!vpq!v#y#z!v$f$g!v#BY#BZ!v$IS$I_!v$I|$JO!v$JT$JU!v$KV$KW!v&FU&FV!v~#nTOr#krs#}s;'S#k;'S;=`$S<%lO#k~$SO_~~$VP;=`<%l#k~$_Oa~~$dOb~~$iOY~~$nO[~~$sO]~~$xOZ~~$}Q^~!O!P%T!Q![$x~%WP!Q![%Z~%`P^~!Q![%Z~%hOW~~%mOS~~%rTR~}!O%m!Q![%m!c!}%m#R#S%m#T#o%m~&WWR~}!O%m!Q![%m!c!}%m#R#S%m#T#U&p#U#b%m#b#c(x#c#o%m~&uVR~}!O%m!Q![%m!c!}%m#R#S%m#T#`%m#`#a'[#a#o%m~'aVR~}!O%m!Q![%m!c!}%m#R#S%m#T#g%m#g#h'v#h#o%m~'{VR~}!O%m!Q![%m!c!}%m#R#S%m#T#X%m#X#Y(b#Y#o%m~(iT`~R~}!O%m!Q![%m!c!}%m#R#S%m#T#o%m~)PTU~R~}!O%m!Q![%m!c!}%m#R#S%m#T#o%m~)eVR~}!O%m!Q![%m!c!}%m#R#S%m#T#f%m#f#g)z#g#o%m~*PVR~}!O%m!Q![%m!c!}%m#R#S%m#T#i%m#i#j'v#j#o%m",
+  tokenizers: [0],
   topRules: {"Program":[0,1]},
   tokenPrec: 255
 })

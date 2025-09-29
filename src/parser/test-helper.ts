@@ -16,14 +16,37 @@ export const regenerateParser = async () => {
   await $`bun generate-parser `
 }
 
-export const expectTree = (input: string) => {
-  const tree = parser.parse(input)
-  return {
-    toMatch: (expected: string) => {
-      expect(treeToString(tree, input)).toEqual(trimWhitespace(expected))
-    },
+// Type declaration for TypeScript
+declare module 'bun:test' {
+  interface Matchers<T> {
+    toMatchTree(expected: string): T
   }
 }
+
+expect.extend({
+  toMatchTree(received: unknown, expected: string) {
+    if (typeof received !== 'string') {
+      return {
+        message: () => 'toMatchTree can only be used with string values',
+        pass: false,
+      }
+    }
+
+    const tree = parser.parse(received)
+    const actual = treeToString(tree, received)
+    const normalizedExpected = trimWhitespace(expected)
+    try {
+      // A hacky way to show the colorized diff in the test output
+      expect(actual).toEqual(normalizedExpected)
+      return { pass: true, message: () => '' }
+    } catch (error) {
+      return {
+        message: () => (error as Error).message,
+        pass: false,
+      }
+    }
+  },
+})
 
 const treeToString = (tree: Tree, input: string): string => {
   const lines: string[] = []
@@ -44,7 +67,7 @@ const treeToString = (tree: Tree, input: string): string => {
     } else {
       const cleanText = nodeName === 'String' ? text.slice(1, -1) : text
       // Node names that should be displayed as single tokens (operators, keywords)
-      const singleTokens = ['+', '-', '*', '/', '->']
+      const singleTokens = ['+', '-', '*', '/', '->', 'fn', '=', 'equals']
       if (singleTokens.includes(nodeName)) {
         lines.push(`${indent}${nodeName}`)
       } else {

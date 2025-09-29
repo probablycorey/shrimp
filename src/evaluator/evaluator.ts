@@ -1,5 +1,6 @@
 import { nodeToString } from '@/evaluator/treeHelper'
 import { Tree, type SyntaxNode } from '@lezer/common'
+import * as terms from '../parser/shrimp.terms.ts'
 
 type Context = Map<string, any>
 
@@ -29,19 +30,19 @@ const evaluateNode = (node: SyntaxNode, input: string, context: Context): any =>
   const value = input.slice(node.from, node.to)
 
   try {
-    switch (node.name) {
-      case 'Number': {
+    switch (node.type.id) {
+      case terms.Number: {
         return parseFloat(value)
       }
 
-      case 'Identifier': {
+      case terms.Identifier: {
         if (!context.has(value)) {
           throw new Error(`Undefined identifier: ${value}`)
         }
         return context.get(value)
       }
 
-      case 'BinOp': {
+      case terms.BinOp: {
         let [left, op, right] = getChildren(node)
 
         left = assertNode(left, 'LeftOperand')
@@ -66,7 +67,7 @@ const evaluateNode = (node: SyntaxNode, input: string, context: Context): any =>
         }
       }
 
-      case 'Assignment': {
+      case terms.Assignment: {
         const [identifier, expr] = getChildren(node)
 
         const identifierNode = assertNode(identifier, 'Identifier')
@@ -78,7 +79,7 @@ const evaluateNode = (node: SyntaxNode, input: string, context: Context): any =>
         return value
       }
 
-      case 'Function': {
+      case terms.Function: {
         const [params, body] = getChildren(node)
 
         const paramNodes = getChildren(assertNode(params, 'Parameters'))

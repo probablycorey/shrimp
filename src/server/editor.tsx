@@ -1,6 +1,9 @@
 import { basicSetup } from 'codemirror'
 import { EditorView } from '@codemirror/view'
 import { editorTheme } from './editorTheme'
+import { shrimpLanguage } from './shrimpLanguage'
+import { shrimpHighlighting } from './editorTheme'
+import { debugTags } from '@/server/debugPlugin'
 
 export const Editor = () => {
   return (
@@ -10,9 +13,14 @@ export const Editor = () => {
 
         console.log('init editor')
         new EditorView({
-          doc: '',
+          doc: `a = 3
+fn x y: x + y
+aa = fn radius: 3.14 * radius * radius
+b = true
+c = "cyan"
+`,
           parent: ref,
-          extensions: [basicSetup, editorTheme],
+          extensions: [basicSetup, editorTheme, shrimpLanguage(), shrimpHighlighting],
         })
       }}
     />
