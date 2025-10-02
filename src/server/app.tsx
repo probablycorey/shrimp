@@ -1,13 +1,9 @@
-import { Editor } from '@/server/editor'
+import { Editor } from '#/editor/editor'
 import { render } from 'hono/jsx/dom'
 import './index.css'
 
 const App = () => {
-  return (
-    <div className="">
-      <Editor />
-    </div>
-  )
+  return <Editor />
 }
 
 const root = document.getElementById('root')!

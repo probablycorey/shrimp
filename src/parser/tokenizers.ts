@@ -1,5 +1,92 @@
 import { ExternalTokenizer, InputStream } from '@lezer/lr'
-import { Identifier } from './shrimp.terms'
+import { CommandPartial, Command, Identifier, UnquotedArg, insertedSemi } from './shrimp.terms'
+import { matchingCommands } from '#editor/commands'
+
+export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack) => {
+  let ch = getFullCodePoint(input, 0)
+  if (!isLowercaseLetter(ch) && !isEmoji(ch)) return
+
+  let pos = getCharSize(ch)
+  let text = String.fromCodePoint(ch)
+
+  // Continue consuming identifier characters
+  while (true) {
+    ch = getFullCodePoint(input, pos)
+
+    if (isLowercaseLetter(ch) || isDigit(ch) || ch === 45 /* - */ || isEmoji(ch)) {
+      text += String.fromCodePoint(ch)
+      pos += getCharSize(ch)
+    } else {
+      break
+    }
+  }
+
+  input.advance(pos)
+
+  if (!stack.canShift(Command) && !stack.canShift(CommandPartial)) {
+    input.acceptToken(Identifier)
+    return
+  }
+
+  const { match, partialMatches } = matchingCommands(text)
+  if (match) {
+    input.acceptToken(Command)
+  } else if (partialMatches.length > 0) {
+    input.acceptToken(CommandPartial)
+  } else {
+    input.acceptToken(Identifier)
+  }
+})
+
+export const argTokenizer = new ExternalTokenizer((input: InputStream, stack: Stack) => {
+  // Only match if we're in a command argument position
+  if (!stack.canShift(UnquotedArg)) return
+
+  const firstCh = input.peek(0)
+
+  // Don't match if it starts with tokens we handle elsewhere
+  if (
+    firstCh === 39 /* ' */ ||
+    firstCh === 40 /* ( */ ||
+    firstCh === 45 /* - (for negative numbers) */ ||
+    (firstCh >= 48 && firstCh <= 57) /* 0-9 (numbers) */
+  )
+    return
+
+  // Read everything that's not a space, newline, or paren
+  let pos = 0
+  while (true) {
+    const ch = input.peek(pos)
+    if (
+      ch === -1 ||
+      ch === 32 /* space */ ||
+      ch === 10 /* \n */ ||
+      ch === 40 /* ( */ ||
+      ch === 41 /* ) */ ||
+      ch === 61 /* = */
+    )
+      break
+    pos++
+  }
+
+  if (pos > 0) {
+    input.advance(pos)
+    input.acceptToken(UnquotedArg)
+  }
+})
+
+export const insertSemicolon = new ExternalTokenizer((input: InputStream, stack: Stack) => {
+  const next = input.peek(0)
+
+  // We're at a newline or end of file
+  if (next === 10 /* \n */ || next === -1 /* EOF */) {
+    // Check if insertedSemi would be valid here
+    if (stack.canShift(insertedSemi)) {
+      // Don't advance! Virtual token has zero width
+      input.acceptToken(insertedSemi, 0)
+    }
+  }
+})
 
 function isLowercaseLetter(ch: number): boolean {
   return ch >= 97 && ch <= 122 // a-z
@@ -54,29 +141,4 @@ function isEmoji(ch: number): boolean {
   )
 }
 
-export const identifierTokenizer = new ExternalTokenizer((input: InputStream) => {
-  const ch = getFullCodePoint(input, 0)
-
-  if (isLowercaseLetter(ch) || isEmoji(ch)) {
-    let pos = ch > 0xffff ? 2 : 1 // emoji takes 2 UTF-16 code units
-
-    // Continue consuming identifier characters
-    while (true) {
-      const nextCh = getFullCodePoint(input, pos)
-
-      if (
-        isLowercaseLetter(nextCh) ||
-        isDigit(nextCh) ||
-        nextCh === 45 /* - */ ||
-        isEmoji(nextCh)
-      ) {
-        pos += nextCh > 0xffff ? 2 : 1 // advance by 1 or 2 UTF-16 code units
-      } else {
-        break
-      }
-    }
-
-    input.advance(pos) // advance by total length
-    input.acceptToken(Identifier)
-  }
-})
+const getCharSize = (ch: number) => (ch > 0xffff ? 2 : 1) // emoji takes 2 UTF-16 code units

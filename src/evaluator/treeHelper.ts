@@ -11,7 +11,6 @@ export const nodeToString = (nodeRef: SyntaxNodeRef, input: string, maxDepth = 1
 
     const indent = '  '.repeat(depth)
     const text = input.slice(currentNodeRef.from, currentNodeRef.to)
-    const singleTokens = ['+', '-', '*', '/', '->', 'fn', '=', 'equals']
 
     let child = currentNodeRef.node.firstChild
     if (child) {
@@ -22,11 +21,7 @@ export const nodeToString = (nodeRef: SyntaxNodeRef, input: string, maxDepth = 1
       }
     } else {
       const cleanText = currentNodeRef.name === 'String' ? text.slice(1, -1) : text
-      if (singleTokens.includes(currentNodeRef.name)) {
-        lines.push(`${indent}${currentNodeRef.name}`)
-      } else {
-        lines.push(`${indent}${currentNodeRef.name} ${cleanText}`)
-      }
+      lines.push(`${indent}${currentNodeRef.name} ${cleanText}`)
     }
   }
 

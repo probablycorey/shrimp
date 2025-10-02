@@ -1,7 +1,9 @@
 import { expect } from 'bun:test'
 import { Tree, TreeCursor } from '@lezer/common'
-import { parser } from './parser/shrimp.ts'
+import { parser } from '#parser/shrimp'
 import { $ } from 'bun'
+import { assert } from '#utils/utils'
+import { evaluate } from '#evaluator/evaluator'
 
 const regenerateParser = async () => {
   let generate = true
@@ -29,21 +31,18 @@ declare module 'bun:test' {
   interface Matchers<T> {
     toMatchTree(expected: string): T
     toFailParse(): T
+    toEvaluateTo(expected: unknown): T
   }
 }
 
 expect.extend({
   toMatchTree(received: unknown, expected: string) {
-    if (typeof received !== 'string') {
-      return {
-        message: () => 'toMatchTree can only be used with string values',
-        pass: false,
-      }
-    }
+    assert(typeof received === 'string', 'toMatchTree can only be used with string values')
 
     const tree = parser.parse(received)
     const actual = treeToString(tree, received)
     const normalizedExpected = trimWhitespace(expected)
+
     try {
       // A hacky way to show the colorized diff in the test output
       expect(actual).toEqual(normalizedExpected)
@@ -55,13 +54,9 @@ expect.extend({
       }
     }
   },
+
   toFailParse(received: unknown) {
-    if (typeof received !== 'string') {
-      return {
-        message: () => 'toMatchTree can only be used with string values',
-        pass: false,
-      }
-    }
+    assert(typeof received === 'string', 'toFailParse can only be used with string values')
 
     try {
       const tree = parser.parse(received)
@@ -90,6 +85,50 @@ expect.extend({
     } catch (error) {
       return {
         message: () => `Parsing threw an error: ${(error as Error).message}`,
+        pass: false,
+      }
+    }
+  },
+
+  toEvaluateTo(received: unknown, expected: unknown) {
+    assert(typeof received === 'string', 'toEvaluateTo can only be used with string values')
+
+    try {
+      const tree = parser.parse(received)
+      let hasErrors = false
+      tree.iterate({
+        enter(n) {
+          if (n.type.isError) {
+            hasErrors = true
+            return false
+          }
+        },
+      })
+
+      if (hasErrors) {
+        const actual = treeToString(tree, received)
+        return {
+          message: () =>
+            `Expected input to evaluate successfully, but it had syntax errors:\n${actual}`,
+          pass: false,
+        }
+      } else {
+        const context = new Map<string, unknown>()
+        const result = evaluate(received, tree, context)
+        if (Object.is(result, expected)) {
+          return { pass: true }
+        } else {
+          const expectedStr = JSON.stringify(expected)
+          const resultStr = JSON.stringify(result)
+          return {
+            message: () => `Expected evaluation to be ${expectedStr}, but got ${resultStr}`,
+            pass: false,
+          }
+        }
+      }
+    } catch (error) {
+      return {
+        message: () => `Evaluation threw an error: ${(error as Error).message}`,
         pass: false,
       }
     }
@@ -151,4 +190,11 @@ const trimWhitespace = (str: string): string => {
       return line.slice(leadingWhitespace.length)
     })
     .join('\n')
+}
+
+const expectString = (value: unknown): string => {
+  if (typeof value !== 'string') {
+    throw new Error('Expected a string input')
+  }
+  return value
 }

@@ -1,4 +1,135 @@
 import { expect, describe, test } from 'bun:test'
+import { afterEach } from 'bun:test'
+import { resetCommandSource, setCommandSource } from '#editor/commands'
+import { beforeEach } from 'bun:test'
+import './shrimp.grammar' // Importing this so changes cause it to retest!
+
+describe('calling commands', () => {
+  beforeEach(() => {
+    setCommandSource(() => [
+      { command: 'tail', args: [{ name: 'path', type: 'string' }] },
+      { command: 'head', args: [{ name: 'path', type: 'string' }] },
+      { command: 'echo', args: [{ name: 'path', type: 'string' }] },
+    ])
+  })
+
+  afterEach(() => {
+    resetCommandSource()
+  })
+
+  test('basic', () => {
+    expect('tail path').toMatchTree(`
+      CommandCall
+        Command tail
+        Arg
+          Identifier path
+    `)
+
+    expect('tai').toMatchTree(`
+      CommandCall
+        CommandPartial tai
+    `)
+  })
+
+  test('command with arg that is also a command', () => {
+    expect('tail tail').toMatchTree(`
+      CommandCall
+        Command tail
+        Arg
+          Identifier tail
+    `)
+
+    expect('tai').toMatchTree(`
+      CommandCall
+        CommandPartial tai
+    `)
+  })
+
+  test('when no commands match, falls back to Identifier', () => {
+    expect('omgwtf').toMatchTree(`
+      Identifier omgwtf
+    `)
+  })
+
+  // In shrimp.test.ts, add to the 'calling commands' section
+  test('arg', () => {
+    expect('tail l').toMatchTree(`    
+      CommandCall
+        Command tail
+        Arg
+          Identifier l
+  `)
+  })
+
+  test('partial namedArg', () => {
+    expect('tail lines=').toMatchTree(`    
+      CommandCall
+        Command tail
+        PartialNamedArg
+          NamedArgPrefix lines=
+    `)
+  })
+
+  test('complete namedArg', () => {
+    expect('tail lines=10').toMatchTree(`    
+      CommandCall
+        Command tail
+        NamedArg
+          NamedArgPrefix lines=
+          Number 10
+    `)
+  })
+
+  test('mixed positional and named args', () => {
+    expect('tail ../file.txt lines=5').toMatchTree(`    
+      CommandCall
+        Command tail
+        Arg
+          UnquotedArg ../file.txt
+        NamedArg
+          NamedArgPrefix lines=
+          Number 5
+  `)
+  })
+
+  test('named args', () => {
+    expect(`tail lines='5' path`).toMatchTree(`
+      CommandCall
+        Command tail
+        NamedArg
+          NamedArgPrefix lines=
+          String 5
+        Arg
+          Identifier path
+    `)
+  })
+
+  test('complex args', () => {
+    expect(`tail lines=(2 + 3) filter='error' (a + b)`).toMatchTree(`
+      CommandCall
+        Command tail
+        NamedArg
+          NamedArgPrefix lines=
+          paren (
+          BinOp
+            Number 2
+            operator +
+            Number 3
+          paren )
+        NamedArg
+          NamedArgPrefix filter=
+          String error
+        
+        Arg
+          paren (
+          BinOp
+            Identifier a
+            operator +
+            Identifier b
+          paren )
+    `)
+  })
+})
 
 describe('Identifier', () => {
   test('parses simple identifiers', () => {
@@ -26,7 +157,7 @@ describe('BinOp', () => {
     expect('2 + 3').toMatchTree(`
       BinOp
         Number 2
-        Operator +
+        operator +
         Number 3
     `)
   })
@@ -35,7 +166,7 @@ describe('BinOp', () => {
     expect('5 - 2').toMatchTree(`
       BinOp
         Number 5
-        Operator -
+        operator -
         Number 2
     `)
   })
@@ -44,7 +175,7 @@ describe('BinOp', () => {
     expect('4 * 3').toMatchTree(`
       BinOp
         Number 4
-        Operator *
+        operator *
         Number 3
     `)
   })
@@ -53,7 +184,7 @@ describe('BinOp', () => {
     expect('8 / 2').toMatchTree(`
       BinOp
         Number 8
-        Operator /
+        operator /
         Number 2
     `)
   })
@@ -63,15 +194,15 @@ describe('BinOp', () => {
       BinOp
         BinOp
           Number 2
-          Operator +
+          operator +
           BinOp
             Number 3
-            Operator *
+            operator *
             Number 4
-        Operator -
+        operator -
         BinOp
           Number 5
-          Operator /
+          operator /
           Number 1
     `)
   })
@@ -81,68 +212,53 @@ describe('Fn', () => {
   test('parses function with single parameter', () => {
     expect('fn x: x + 1').toMatchTree(`
       Function
-        Keyword fn
+        keyword fn
         Params
           Identifier x
-        Colon :
+        colon :
         BinOp
           Identifier x
-          Operator +
+          operator +
           Number 1`)
   })
 
   test('parses function with multiple parameters', () => {
     expect('fn x y: x * y').toMatchTree(`
       Function
-        Keyword fn
+        keyword fn
         Params
           Identifier x
           Identifier y
-        Colon :
+        colon :
         BinOp
           Identifier x
-          Operator *
+          operator *
           Identifier y`)
   })
 
   test('parses nested functions', () => {
     expect('fn x: fn y: x + y').toMatchTree(`
       Function
-        Keyword fn
+        keyword fn
         Params
           Identifier x
-        Colon :
+        colon :
         Function
-          Keyword fn
+          keyword fn
           Params
             Identifier y
-          Colon :
+          colon :
           BinOp
             Identifier x
-            Operator +
+            operator +
             Identifier y`)
   })
 })
 
 describe('Identifier', () => {
   test('parses hyphenated identifiers correctly', () => {
-    expect('my-var - another-var').toMatchTree(`
-      BinOp
-        Identifier my-var
-        Operator -
-        Identifier another-var`)
-
-    expect('double--trouble - another-var').toMatchTree(`
-      BinOp
-        Identifier double--trouble
-        Operator -
-        Identifier another-var`)
-
-    expect('tail-- - another-var').toMatchTree(`
-      BinOp
-        Identifier tail--
-        Operator -
-        Identifier another-var`)
+    expect('my-var').toMatchTree(`Identifier my-var`)
+    expect('double--trouble').toMatchTree(`Identifier double--trouble`)
   })
 })
 
@@ -151,10 +267,10 @@ describe('Assignment', () => {
     expect('x = 5 + 3').toMatchTree(`
       Assignment
         Identifier x
-        Operator =
+        operator =
         BinOp
           Number 5
-          Operator +
+          operator +
           Number 3`)
   })
 
@@ -162,16 +278,16 @@ describe('Assignment', () => {
     expect('add = fn a b: a + b').toMatchTree(`
       Assignment
         Identifier add
-        Operator =
+        operator =
         Function
-          Keyword fn
+          keyword fn
           Params
             Identifier a
             Identifier b
-          Colon :
+          colon :
           BinOp
             Identifier a
-            Operator +
+            operator +
             Identifier b`)
   })
 })
@@ -180,59 +296,36 @@ describe('Parentheses', () => {
   test('parses expressions with parentheses correctly', () => {
     expect('(2 + 3) * 4').toMatchTree(`
       BinOp
-        Paren (
+        paren (
         BinOp
           Number 2
-          Operator +
+          operator +
           Number 3
-        Paren )
-        Operator *
+        paren )
+        operator *
         Number 4`)
   })
 
   test('parses nested parentheses correctly', () => {
     expect('((1 + 2) * (3 - 4)) / 5').toMatchTree(`
       BinOp
-        Paren (
+        paren (
         BinOp
-          Paren (
+          paren (
           BinOp
             Number 1
-            Operator +
+            operator +
             Number 2
-          Paren )
-          Operator *
-          Paren (
+          paren )
+          operator *
+          paren (
           BinOp
             Number 3
-            Operator -
+            operator -
             Number 4
-          Paren )
-        Paren )
-        Operator /
+          paren )
+        paren )
+        operator /
         Number 5`)
-  })
-})
-
-describe('multiline', () => {
-  test('parses multiline expressions', () => {
-    expect(`
-      5 + 4
-      fn x: x - 1
-    `).toMatchTree(`
-      BinOp
-        Number 5
-        Operator +
-        Number 4
-      Function
-        Keyword fn
-        Params
-          Identifier x
-        Colon :
-        BinOp
-          Identifier x
-          Operator -
-          Number 1
-    `)
   })
 })

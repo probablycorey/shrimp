@@ -20,7 +20,7 @@ body {
   flex-direction: column;
 }
 
-.terminal-output {
+#output {
   flex: 1;
   background: #40318D;
   color: #7C70DA;
@@ -29,4 +29,24 @@ body {
   white-space: pre-wrap;
   font-family: 'Pixeloid Mono', 'Courier New', monospace;
   font-size: 18px;
+}
+
+#output .error {
+  color: #FF6E6E;
+}
+
+#status-bar {
+  height: 30px;
+  background: #1E2A4A;
+  color: #B3A9FF;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 14px;
+  border-top: 3px solid #0E1A3A;
+  border-bottom: 3px solid #0E1A3A;
+}
+
+.syntax-error {
+  text-decoration: underline dotted #FF6E6E;
 }
