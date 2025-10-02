@@ -1,4 +1,4 @@
-import { ExternalTokenizer, InputStream } from '@lezer/lr'
+import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
 import { CommandPartial, Command, Identifier, UnquotedArg, insertedSemi } from './shrimp.terms'
 import { matchingCommands } from '#editor/commands'
 
@@ -88,15 +88,15 @@ export const insertSemicolon = new ExternalTokenizer((input: InputStream, stack:
   }
 })
 
-function isLowercaseLetter(ch: number): boolean {
+const isLowercaseLetter = (ch: number): boolean => {
   return ch >= 97 && ch <= 122 // a-z
 }
 
-function isDigit(ch: number): boolean {
+const isDigit = (ch: number): boolean => {
   return ch >= 48 && ch <= 57 // 0-9
 }
 
-function getFullCodePoint(input: InputStream, pos: number): number {
+const getFullCodePoint = (input: InputStream, pos: number): number => {
   const ch = input.peek(pos)
 
   // Check if this is a high surrogate (0xD800-0xDBFF)
@@ -112,7 +112,7 @@ function getFullCodePoint(input: InputStream, pos: number): number {
   return ch // Single code unit
 }
 
-function isEmoji(ch: number): boolean {
+const isEmoji = (ch: number): boolean => {
   return (
     // Basic Emoticons
     (ch >= 0x1f600 && ch <= 0x1f64f) ||

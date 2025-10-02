@@ -139,6 +139,30 @@ const evaluateNode = (node: SyntaxNode, input: string, context: Context): any =>
       }
     }
 
+    case terms.CommandCall: {
+      const commandNode = assertNode(node.firstChild, 'Command')
+      const commandIdentifier = assertNode(commandNode.firstChild, 'Identifier')
+      const command = input.slice(commandIdentifier.from, commandIdentifier.to)
+
+      const args = getChildren(node)
+        .slice(1)
+        .map((argNode) => {
+          if (argNode.type.id === terms.Arg) {
+            return evaluateNode(argNode, input, context)
+          } else if (argNode.type.id === terms.NamedArg) {
+            return evaluateNode(argNode, input, context)
+          } else {
+            throw new RuntimeError(
+              `Unexpected argument type: ${argNode.type.name}`,
+              input,
+              argNode.from,
+              argNode.to
+            )
+          }
+        })
+      const commandName = input.slice(commandIdentifier.from, commandIdentifier.to)
+    }
+
     default:
       const isLowerCase = node.type.name[0] == node.type.name[0]?.toLowerCase()
 

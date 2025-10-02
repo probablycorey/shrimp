@@ -201,15 +201,7 @@ export const inlineHints = [
           child = child.nextSibling
         }
 
-        console.log(
-          `🌭`,
-          availableArgs.map((a) => a.name)
-        )
-
-        return {
-          commandShape,
-          availableArgs,
-        }
+        return { commandShape, availableArgs }
       }
     },
     {
