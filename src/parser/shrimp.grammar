@@ -75,4 +75,5 @@ BinOp {
   expr !additive "-" expr
 }
 
-atom { Identifier ~command | Number | String | Boolean | leftParen expr rightParen }
+ParenExpr { leftParen expr rightParen }
+atom { Identifier ~command | Number | String | Boolean | ParenExpr }

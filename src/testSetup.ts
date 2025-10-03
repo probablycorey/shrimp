@@ -128,7 +128,7 @@ expect.extend({
       }
     } catch (error) {
       return {
-        message: () => `Evaluation threw an error: ${(error as Error).message}`,
+        message: () => `Evaluation threw an error:\n${(error as Error).message}`,
         pass: false,
       }
     }

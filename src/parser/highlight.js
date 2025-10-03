@@ -1,5 +1,4 @@
 import { styleTags, tags } from '@lezer/highlight'
-import { Command, Identifier, Params } from '#/parser/shrimp.terms'
 
 export const highlighting = styleTags({
   Identifier: tags.name,

@@ -4,15 +4,15 @@ import {tokenizer, argTokenizer, insertSemicolon} from "./tokenizers"
 import {highlighting} from "./highlight.js"
 export const parser = LRParser.deserialize({
   version: 14,
-  states: "%^OkQTOOOuQaO'#DPO!aQTO'#CkO!iQaO'#C}OOQ`'#DQ'#DQOOQl'#DP'#DPOVQTO'#DPO#fQnO'#CbO!uQaO'#C}QOQPOOOVQTO,59TOOQS'#Cx'#CxO#pQTO'#CmO#xQPO,59VOVQTO,59ZOVQTO,59ZOOQO'#DR'#DROOQO,59i,59iO#}QPO,59kOOQl'#DO'#DOO$tQnO'#CuOOQl'#Cv'#CvOOQl'#Cw'#CwO%RQnO,58|O%]QaO1G.oOOQS-E6v-E6vOVQTO1G.qOOQ`1G.u1G.uO%tQaO1G.uOOQl1G/V1G/VOOQl,58},58}OOQl-E6u-E6uO&]QaO7+$]",
-  stateData: "&w~OpOS~OPPOXTOYTOZTO[UO`QO~OQVORVO~PVO^YOdsXesXfsXgsXnsXvsXhsX~OPZObaP~Od^Oe^Of_Og_On`Ov`O~OPTOScOWdOXTOYTOZTO[UO~OnUXvUX~P!}OPZObaX~ObjO~Od^Oe^Of_Og_OhmO~OPTOScOXTOYTOZTO[UO~OWiXniXviX~P$`OnUavUa~P!}Od^Oe^Of_Og_On]iv]ih]i~Od^Oe^Ofcigcincivcihci~Od^Oe^Of_Og_On_qv_qh_q~OXg~",
-  goto: "#fvPPPPPPwzPPPPP!OP!OP!WP!OPPPPPzz!Z!aPPPP!g!j!q#O#bRWOTfVg]SOUY^_jR]QQgVRogQ[QRi[RXOSeVgRnd[SOUY^_jVcVdgQROQbUQhYQk^Ql_RpjTaRW",
-  nodeNames: "⚠ Identifier Command CommandPartial UnquotedArg Program CommandCall NamedArg NamedArgPrefix Number String Boolean paren Assignment operator Function keyword Params colon BinOp operator operator operator operator paren PartialNamedArg Arg",
-  maxTerm: 38,
+  states: "%^OkQTOOOuQaO'#DQO!aQTO'#ClO!iQaO'#DOOOQ`'#DR'#DROVQTO'#ChOOQl'#DQ'#DQO#fQnO'#CbO!uQaO'#DOQOQPOOOVQTO,59UOOQS'#Cy'#CyO#pQTO'#CnO#xQPO,59WOVQTO,59[OVQTO,59[OOQO'#DS'#DSOOQO,59j,59jO#}QPO,59SOOQl'#DP'#DPO$tQnO'#CvOOQl'#Cw'#CwOOQl'#Cx'#CxO%RQnO,58|O%]QaO1G.pOOQS-E6w-E6wOVQTO1G.rOOQ`1G.v1G.vO%tQaO1G.vOOQl1G.n1G.nOOQl,58},58}OOQl-E6v-E6vO&]QaO7+$^",
+  stateData: "&w~OqOS~OPPOXUOYUOZUO]TOaQO~OQVORVO~PVO_YOetXftXgtXhtXotXwtXitX~OPZOcbP~Oe^Of^Og_Oh_Oo`Ow`O~OPUOScOWdOXUOYUOZUO]TO~OoUXwUX~P!}OPZOcbX~OcjO~Oe^Of^Og_Oh_OimO~OPUOScOXUOYUOZUO]TO~OWjXojXwjX~P$`OoUawUa~P!}Oe^Of^Og_Oh_Oo^iw^ii^i~Oe^Of^Ogdihdiodiwdiidi~Oe^Of^Og_Oh_Oo`qw`qi`q~OXh~",
+  goto: "#rwPPPPPPx{PPPP!PP![P![P!dP![PPPPP{{!g!mPPPP!s!v!}#[#nRWOTfVgcUOTVY^_dgj]SOTY^_jR]QQgVRogQ[QRi[RXOSeVgRnd[SOTY^_jVcVdgQROQbTQhYQk^Ql_RpjTaRW",
+  nodeNames: "⚠ Identifier Command CommandPartial UnquotedArg Program CommandCall NamedArg NamedArgPrefix Number String Boolean ParenExpr paren Assignment operator Function keyword Params colon BinOp operator operator operator operator paren PartialNamedArg Arg",
+  maxTerm: 39,
   propSources: [highlighting],
   skippedNodes: [0],
   repeatNodeCount: 2,
-  tokenData: "*W~RjX^!spq!swx#hxy$lyz$qz{$v{|${}!O%Q!P!Q%s!Q![%Y![!]%x!]!^%}!_!`&S#T#Y&X#Y#Z&m#Z#h&X#h#i)[#i#o&X#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~!xYp~X^!spq!s#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~#kUOr#hsw#hwx#}x;'S#h;'S;=`$f<%lO#h~$SUY~Or#hsw#hwx#}x;'S#h;'S;=`$f<%lO#h~$iP;=`<%l#h~$qO[~~$vOh~~${Od~~%QOf~~%VPg~!Q![%Y~%_QX~!O!P%e!Q![%Y~%hP!Q![%k~%pPX~!Q![%k~%xOe~~%}Ob~~&SOv~~&XO^~Q&[S}!O&X!Q![&X!_!`&h#T#o&XQ&mOWQ~&pV}!O&X!Q![&X!_!`&h#T#U'V#U#b&X#b#c(y#c#o&X~'YU}!O&X!Q![&X!_!`&h#T#`&X#`#a'l#a#o&X~'oU}!O&X!Q![&X!_!`&h#T#g&X#g#h(R#h#o&X~(UU}!O&X!Q![&X!_!`&h#T#X&X#X#Y(h#Y#o&X~(mSZ~}!O&X!Q![&X!_!`&h#T#o&XR)OS`P}!O&X!Q![&X!_!`&h#T#o&X~)_U}!O&X!Q![&X!_!`&h#T#f&X#f#g)q#g#o&X~)tU}!O&X!Q![&X!_!`&h#T#i&X#i#j(R#j#o&X",
+  tokenData: "*W~RjX^!spq!swx#hxy$lyz$qz{$v{|${}!O%Q!P!Q%s!Q![%Y![!]%x!]!^%}!_!`&S#T#Y&X#Y#Z&m#Z#h&X#h#i)[#i#o&X#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~!xYq~X^!spq!s#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~#kUOr#hsw#hwx#}x;'S#h;'S;=`$f<%lO#h~$SUY~Or#hsw#hwx#}x;'S#h;'S;=`$f<%lO#h~$iP;=`<%l#h~$qO]~~$vOi~~${Oe~~%QOg~~%VPh~!Q![%Y~%_QX~!O!P%e!Q![%Y~%hP!Q![%k~%pPX~!Q![%k~%xOf~~%}Oc~~&SOw~~&XO_~Q&[S}!O&X!Q![&X!_!`&h#T#o&XQ&mOWQ~&pV}!O&X!Q![&X!_!`&h#T#U'V#U#b&X#b#c(y#c#o&X~'YU}!O&X!Q![&X!_!`&h#T#`&X#`#a'l#a#o&X~'oU}!O&X!Q![&X!_!`&h#T#g&X#g#h(R#h#o&X~(UU}!O&X!Q![&X!_!`&h#T#X&X#X#Y(h#Y#o&X~(mSZ~}!O&X!Q![&X!_!`&h#T#o&XR)OSaP}!O&X!Q![&X!_!`&h#T#o&X~)_U}!O&X!Q![&X!_!`&h#T#f&X#f#g)q#g#o&X~)tU}!O&X!Q![&X!_!`&h#T#i&X#i#j(R#j#o&X",
   tokenizers: [0, 1, tokenizer, argTokenizer, insertSemicolon],
   topRules: {"Program":[0,5]},
   tokenPrec: 266

@@ -1,36 +1,8 @@
-import { nodeToString } from '#/evaluator/treeHelper'
 import { Tree, type SyntaxNode } from '@lezer/common'
 import * as terms from '../parser/shrimp.terms.ts'
-import { errorMessage } from '#utils/utils.ts'
-
-type Context = Map<string, any>
-
-function getChildren(node: SyntaxNode): SyntaxNode[] {
-  const children = []
-  let child = node.firstChild
-  while (child) {
-    children.push(child)
-    child = child.nextSibling
-  }
-  return children
-}
-
-class RuntimeError extends Error {
-  constructor(message: string, private input: string, private from: number, private to: number) {
-    super(message)
-    this.name = 'RuntimeError'
-    this.message = `${message} at "${input.slice(from, to)}" (${from}:${to})`
-  }
-
-  toReadableString(code: string) {
-    const pointer = ' '.repeat(this.from) + '^'.repeat(this.to - this.from)
-    const context = code.split('\n').slice(-2).join('\n')
-    return `${context}\n${pointer}\n${this.message}`
-  }
-}
+import { RuntimeError } from '#evaluator/runtimeError.ts'
 
 export const evaluate = (input: string, tree: Tree, context: Context) => {
-  // Just evaluate the top-level children, don't use iterate()
   let result = undefined
   let child = tree.topNode.firstChild
   try {
@@ -42,7 +14,7 @@ export const evaluate = (input: string, tree: Tree, context: Context) => {
     if (error instanceof RuntimeError) {
       throw new Error(error.toReadableString(input))
     } else {
-      throw new RuntimeError('Unknown error during evaluation', input, 0, input.length)
+      throw new Error('Unknown error during evaluation')
     }
   }
 
@@ -50,138 +22,150 @@ export const evaluate = (input: string, tree: Tree, context: Context) => {
 }
 
 const evaluateNode = (node: SyntaxNode, input: string, context: Context): any => {
-  const value = input.slice(node.from, node.to)
+  const evalNode = syntaxNodeToEvalNode(node, input, context)
 
-  switch (node.type.id) {
-    case terms.Number: {
-      return parseFloat(value)
-    }
+  switch (evalNode.kind) {
+    case 'number':
+    case 'string':
+    case 'boolean':
+      return evalNode.value
 
-    case terms.String: {
-      return value.slice(1, -1) // Remove quotes
-    }
-    case terms.Boolean: {
-      return value === 'true'
-    }
-
-    case terms.Identifier: {
-      if (!context.has(value)) {
-        throw new RuntimeError(`Undefined identifier: ${value}`, input, node.from, node.to)
-      }
-      return context.get(value)
-    }
-
-    case terms.BinOp: {
-      let [left, op, right] = getChildren(node)
-
-      left = assertNode(left, 'LeftOperand')
-      op = assertNode(op, 'Operator')
-      right = assertNode(right, 'RightOperand')
-
-      const leftValue = evaluateNode(left, input, context)
-      const opValue = input.slice(op.from, op.to)
-      const rightValue = evaluateNode(right, input, context)
-
-      switch (opValue) {
-        case '+':
-          return leftValue + rightValue
-        case '-':
-          return leftValue - rightValue
-        case '*':
-          return leftValue * rightValue
-        case '/':
-          return leftValue / rightValue
-        default:
-          throw new RuntimeError(`Unknown operator: ${opValue}`, input, op.from, op.to)
+    case 'identifier': {
+      const name = evalNode.name
+      if (context.has(name)) {
+        return context.get(name)
+      } else {
+        throw new RuntimeError(`Undefined variable "${name}"`, node.from, node.to)
       }
     }
 
-    case terms.Assignment: {
-      const [identifier, _operator, expr] = getChildren(node)
-
-      const identifierNode = assertNode(identifier, 'Identifier')
-      const exprNode = assertNode(expr, 'Expression')
-
-      const name = input.slice(identifierNode.from, identifierNode.to)
-      const value = evaluateNode(exprNode, input, context)
+    case 'assignment': {
+      const name = evalNode.name
+      const value = evaluateNode(evalNode.value.node, input, context)
       context.set(name, value)
 
       return value
     }
 
-    case terms.Function: {
-      const [params, body] = getChildren(node)
+    case 'binop': {
+      const left = evaluateNode(evalNode.left, input, context)
+      const right = evaluateNode(evalNode.right, input, context)
 
-      const paramNodes = getChildren(assertNode(params, 'Parameters'))
-      const bodyNode = assertNode(body, 'Body')
-
-      const paramNames = paramNodes.map((param) => {
-        const paramNode = assertNode(param, 'Identifier')
-        return input.slice(paramNode.from, paramNode.to)
-      })
-
-      return (...args: any[]) => {
-        if (args.length !== paramNames.length) {
-          throw new RuntimeError(
-            `Expected ${paramNames.length} arguments, but got ${args.length}`,
-            input,
-            node.from,
-            node.to
-          )
-        }
-
-        const localContext = new Map(context)
-        paramNames.forEach((param, index) => {
-          localContext.set(param, args[index])
-        })
-
-        return evaluateNode(bodyNode, input, localContext)
+      if (evalNode.op === '+') {
+        return left + right
+      } else if (evalNode.op === '-') {
+        return left - right
+      } else if (evalNode.op === '*') {
+        return left * right
+      } else if (evalNode.op === '/') {
+        return left / right
+      } else {
+        throw new RuntimeError(`Unsupported operator "${evalNode.op}"`, node.from, node.to)
       }
     }
-
-    case terms.CommandCall: {
-      const commandNode = assertNode(node.firstChild, 'Command')
-      const commandIdentifier = assertNode(commandNode.firstChild, 'Identifier')
-      const command = input.slice(commandIdentifier.from, commandIdentifier.to)
-
-      const args = getChildren(node)
-        .slice(1)
-        .map((argNode) => {
-          if (argNode.type.id === terms.Arg) {
-            return evaluateNode(argNode, input, context)
-          } else if (argNode.type.id === terms.NamedArg) {
-            return evaluateNode(argNode, input, context)
-          } else {
-            throw new RuntimeError(
-              `Unexpected argument type: ${argNode.type.name}`,
-              input,
-              argNode.from,
-              argNode.to
-            )
-          }
-        })
-      const commandName = input.slice(commandIdentifier.from, commandIdentifier.to)
-    }
-
-    default:
-      const isLowerCase = node.type.name[0] == node.type.name[0]?.toLowerCase()
-
-      // Ignore nodes with lowercase names, those are for syntax only
-      if (!isLowerCase) {
-        throw new RuntimeError(
-          `Unsupported node type "${node.type.name}"`,
-          input,
-          node.from,
-          node.to
-        )
-      }
   }
 }
 
-const assertNode = (node: any, expectedName: string): SyntaxNode => {
-  if (!node) {
-    throw new Error(`Expected "${expectedName}", but got undefined`)
+type Operators = '+' | '-' | '*' | '/'
+type Context = Map<string, any>
+type EvalNode =
+  | { kind: 'number'; value: number; node: SyntaxNode }
+  | { kind: 'string'; value: string; node: SyntaxNode }
+  | { kind: 'boolean'; value: boolean; node: SyntaxNode }
+  | { kind: 'identifier'; name: string; node: SyntaxNode }
+  | { kind: 'binop'; op: Operators; left: SyntaxNode; right: SyntaxNode; node: SyntaxNode }
+  | { kind: 'assignment'; name: string; value: EvalNode; node: SyntaxNode }
+  | { kind: 'command'; name: string; args: EvalNode[]; node: SyntaxNode }
+
+const syntaxNodeToEvalNode = (node: SyntaxNode, input: string, context: Context): EvalNode => {
+  const value = input.slice(node.from, node.to)
+
+  switch (node.type.id) {
+    case terms.Number:
+      return { kind: 'number', value: parseFloat(value), node }
+
+    case terms.String:
+      return { kind: 'string', value: value.slice(1, -1), node } // Remove quotes
+
+    case terms.Boolean:
+      return { kind: 'boolean', value: value === 'true', node }
+
+    case terms.Identifier:
+      return { kind: 'identifier', name: value, node }
+
+    case terms.BinOp: {
+      const [left, op, right] = destructure(node, ['*', '*', '*'])
+      const opString = input.slice(op.from, op.to) as Operators
+      return { kind: 'binop', op: opString, left, right, node }
+    }
+
+    case terms.Assignment: {
+      const [identifier, _equals, expr] = destructure(node, [terms.Identifier, '*', '*'])
+
+      const name = input.slice(identifier.from, identifier.to)
+      const value = syntaxNodeToEvalNode(expr, input, context)
+
+      return { kind: 'assignment', name, value, node }
+    }
+
+    case terms.ParenExpr: {
+      const [_leftParen, expr, _rightParen] = destructure(node, ['*', '*', '*'])
+      return syntaxNodeToEvalNode(expr, input, context)
+    }
+
+    case terms.CommandCall: {
+      const [_at, identifier, _leftParen, ...rest] = destructure(node, [
+        '*',
+        terms.Identifier,
+        '*',
+        '*',
+      ])
   }
 
-  return node
+  throw new RuntimeError(`Unsupported node type "${node.type.name}"`, node.from, node.to)
+}
+
+/* 
+The code below is a...
+SIN AGAINST GOD!
+...but it makes it easier to use above
+*/
+type ExpectedType = '*' | number
+function destructure(node: SyntaxNode, expected: [ExpectedType]): [SyntaxNode]
+function destructure(
+  node: SyntaxNode,
+  expected: [ExpectedType, ExpectedType]
+): [SyntaxNode, SyntaxNode]
+function destructure(
+  node: SyntaxNode,
+  expected: [ExpectedType, ExpectedType, ExpectedType]
+): [SyntaxNode, SyntaxNode, SyntaxNode]
+function destructure(node: SyntaxNode, expected: ExpectedType[]): SyntaxNode[] {
+  const children: SyntaxNode[] = []
+  let child = node.firstChild
+  while (child) {
+    children.push(child)
+    child = child.nextSibling
+  }
+
+  if (children.length !== expected.length) {
+    throw new RuntimeError(
+      `${node.type.name} expected ${expected.length} children, got ${children.length}`,
+      node.from,
+      node.to
+    )
+  }
+
+  children.forEach((child, i) => {
+    const expectedType = expected[i]
+    if (expectedType !== '*' && child.type.id !== expectedType) {
+      throw new RuntimeError(
+        `Child ${i} of ${node.type.name} expected ${expectedType}, got ${child.type.id} (${child.type.name})`,
+        child.from,
+        child.to
+      )
+    }
+  })
+
+  return children
 }

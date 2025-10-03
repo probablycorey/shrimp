@@ -2,6 +2,7 @@ export type CommandShape = {
   command: string
   description?: string
   args: ArgShape[]
+  execute: string | ((...args: any[]) => any)
 }
 
 type ArgShape<T extends keyof ArgTypeMap = keyof ArgTypeMap> =
@@ -29,6 +30,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'ls',
     description: 'List the contents of a directory',
+    execute: './commands/ls.ts',
     args: [
       { name: 'path', type: 'string', description: 'The path to list' },
       { name: 'all', type: 'boolean', description: 'Show hidden files', default: false },
@@ -46,12 +48,14 @@ const commandShapes: CommandShape[] = [
   {
     command: 'cd',
     description: 'Change the current working directory',
+    execute: './commands/cd.ts',
     args: [{ name: 'path', type: 'string', description: 'The path to change to' }],
   },
 
   {
     command: 'cp',
     description: 'Copy files or directories',
+    execute: './commands/cp.ts',
     args: [
       { name: 'source', type: 'string', description: 'Source file or directory' },
       { name: 'destination', type: 'string', description: 'Destination path' },
@@ -63,6 +67,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'mv',
     description: 'Move files or directories',
+    execute: './commands/mv.ts',
     args: [
       { name: 'source', type: 'string', description: 'Source file or directory' },
       { name: 'destination', type: 'string', description: 'Destination path' },
@@ -73,6 +78,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'rm',
     description: 'Remove files or directories',
+    execute: './commands/rm.ts',
     args: [
       { name: 'path', type: 'string', description: 'Path to remove' },
       { name: 'recursive', type: 'boolean', description: 'Remove recursively', default: false },
@@ -84,6 +90,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'mkdir',
     description: 'Create directories',
+    execute: './commands/mkdir.ts',
     args: [
       { name: 'path', type: 'string', description: 'Directory path to create' },
       { name: 'verbose', type: 'boolean', description: 'Verbose output', default: false },
@@ -93,6 +100,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'touch',
     description: 'Create empty files or update timestamps',
+    execute: './commands/touch.ts',
     args: [
       { name: 'path', type: 'string', description: 'File path to touch' },
       { name: 'access', type: 'boolean', description: 'Update access time only', default: false },
@@ -108,6 +116,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'echo',
     description: 'Display a string',
+    execute: './commands/echo.ts',
     args: [
       { name: 'text', type: 'string', description: 'Text to display' },
       { name: 'no-newline', type: 'boolean', description: "Don't append newline", default: false },
@@ -117,6 +126,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'cat',
     description: 'Display file contents',
+    execute: './commands/cat.ts',
     args: [
       { name: 'path', type: 'string', description: 'File to display' },
       { name: 'numbered', type: 'boolean', description: 'Show line numbers', default: false },
@@ -126,6 +136,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'head',
     description: 'Show first lines of input',
+    execute: './commands/head.ts',
     args: [
       { name: 'path', type: 'string', description: 'File to read from' },
       { name: 'lines', type: 'number', description: 'Number of lines', default: 10 },
@@ -135,6 +146,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'tail',
     description: 'Show last lines of input',
+    execute: './commands/tail.ts',
     args: [
       { name: 'path', type: 'string', description: 'File to read from' },
       { name: 'lines', type: 'number', description: 'Number of lines', default: 10 },
@@ -145,6 +157,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'grep',
     description: 'Search for patterns in text',
+    execute: './commands/grep.ts',
     args: [
       { name: 'pattern', type: 'string', description: 'Pattern to search for' },
       {
@@ -161,6 +174,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'sort',
     description: 'Sort input',
+    execute: './commands/sort.ts',
     args: [
       { name: 'reverse', type: 'boolean', description: 'Sort in reverse order', default: false },
       {
@@ -176,6 +190,7 @@ const commandShapes: CommandShape[] = [
   {
     command: 'uniq',
     description: 'Filter out repeated lines',
+    execute: './commands/uniq.ts',
     args: [
       { name: 'count', type: 'boolean', description: 'Show count of occurrences', default: false },
       {
@@ -191,24 +206,28 @@ const commandShapes: CommandShape[] = [
   {
     command: 'select',
     description: 'Select specific columns from data',
+    execute: './commands/select.ts',
     args: [{ name: 'columns', type: 'string', description: 'Columns to select' }],
   },
 
   {
     command: 'where',
     description: 'Filter data based on conditions',
+    execute: './commands/where.ts',
     args: [{ name: 'condition', type: 'string', description: 'Filter condition' }],
   },
 
   {
     command: 'group-by',
     description: 'Group data by column values',
+    execute: './commands/group-by.ts',
     args: [{ name: 'column', type: 'string', description: 'Column to group by' }],
   },
 
   {
     command: 'ps',
     description: 'List running processes',
+    execute: './commands/ps.ts',
     args: [
       { name: 'long', type: 'boolean', description: 'Show detailed information', default: false },
     ],
@@ -217,12 +236,14 @@ const commandShapes: CommandShape[] = [
   {
     command: 'sys',
     description: 'Show system information',
+    execute: './commands/sys.ts',
     args: [],
   },
 
   {
     command: 'which',
     description: 'Find the location of a command',
+    execute: './commands/which.ts',
     args: [
       { name: 'command', type: 'string', description: 'Command to locate' },
       { name: 'all', type: 'boolean', description: 'Show all matches', default: false },

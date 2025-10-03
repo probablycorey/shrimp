@@ -41,7 +41,7 @@ export const Editor = () => {
               shrimpLanguage(),
               shrimpHighlighting,
               shrimpErrors,
-              inlineHints,
+              // inlineHints,
               debugTags,
             ],
           })
