@@ -23,3 +23,7 @@ export const toElement = (node: any): HTMLElement => {
   render(node, c)
   return c.firstElementChild as HTMLElement
 }
+
+export const assertNever = (x: never): never => {
+  throw new Error(`Unexpected object: ${x}`)
+}
