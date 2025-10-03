@@ -1,0 +1,90 @@
+# this is a comment
+
+# unbound symbols are treated as strings
+echo hello
+---
+hello
+
+# strings use single quotes
+echo 'hello'
+---
+hello
+
+# arguments to commands and functions can be named. There is NEVER a space between the name, the equals sign, and the expression
+tail file.txt lines=2 follow=true
+
+# named args can be in any order, and can be mixed with positional args
+tail lines=2 file.txt follow=true
+
+# symbols can be assigned to variables
+string = 'world'
+also-string = cool # as long as cool isn't bound
+boolean = true
+number = 34.5
+
+echo also-string
+---
+cool
+
+# symbols can contain lowercase letters, dashes, numbers, and emojis
+greeting-message1 = 'hello'
+😀 = 'happy'
+mr-🌵-health = 34
+
+# paths can be assigned to variables, paths are identifiers that contain any of these 
+# characters: `/ . ~`
+my-path = ~/documents/file.txt
+a-file = file.txt
+
+# binary operations are supported, there is ALWAYS a space between the operator and the operands
+1 + 2
+---
+3
+
+# symbols can be assigned to functions. The body of the function comes after a colon `:`
+add = fn x y: x + y
+add 1 2
+---
+3
+
+# Functions can have multiple lines, they are terminated with `end`
+sub = fn x y:
+  x - y
+end
+
+sub 5 1
+---
+4
+
+# You can pipe the output of one function to another using `|`. The output of the
+# left function is passed as the first argument to the right function.
+'hello' | echo
+---
+hello
+
+add 4 2 | sub 1
+---
+5
+
+# You can use parentheses to group expressions
+(1 + 2) * 3
+---
+9
+
+# Parentheses can also be used to group function arguments
+add 1 (2 + 1)
+---
+4
+
+# Parentheses can also be used to call Functions
+add 1 (sub 5 2)
+---
+4
+
+
+# HOLD UP
+
+- how do we handle arrays?
+- how do we handle hashes?
+- conditionals
+- loops
