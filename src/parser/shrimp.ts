@@ -4,16 +4,16 @@ import {tokenizer, argTokenizer, insertSemicolon} from "./tokenizers"
 import {highlighting} from "./highlight.js"
 export const parser = LRParser.deserialize({
   version: 14,
-  states: "%^OkQTOOOuQaO'#DQO!aQTO'#ClO!iQaO'#DOOOQ`'#DR'#DROVQTO'#ChOOQl'#DQ'#DQO#fQnO'#CbO!uQaO'#DOQOQPOOOVQTO,59UOOQS'#Cy'#CyO#pQTO'#CnO#xQPO,59WOVQTO,59[OVQTO,59[OOQO'#DS'#DSOOQO,59j,59jO#}QPO,59SOOQl'#DP'#DPO$tQnO'#CvOOQl'#Cw'#CwOOQl'#Cx'#CxO%RQnO,58|O%]QaO1G.pOOQS-E6w-E6wOVQTO1G.rOOQ`1G.v1G.vO%tQaO1G.vOOQl1G.n1G.nOOQl,58},58}OOQl-E6v-E6vO&]QaO7+$^",
-  stateData: "&w~OqOS~OPPOXUOYUOZUO]TOaQO~OQVORVO~PVO_YOetXftXgtXhtXotXwtXitX~OPZOcbP~Oe^Of^Og_Oh_Oo`Ow`O~OPUOScOWdOXUOYUOZUO]TO~OoUXwUX~P!}OPZOcbX~OcjO~Oe^Of^Og_Oh_OimO~OPUOScOXUOYUOZUO]TO~OWjXojXwjX~P$`OoUawUa~P!}Oe^Of^Og_Oh_Oo^iw^ii^i~Oe^Of^Ogdihdiodiwdiidi~Oe^Of^Og_Oh_Oo`qw`qi`q~OXh~",
-  goto: "#rwPPPPPPx{PPPP!PP![P![P!dP![PPPPP{{!g!mPPPP!s!v!}#[#nRWOTfVgcUOTVY^_dgj]SOTY^_jR]QQgVRogQ[QRi[RXOSeVgRnd[SOTY^_jVcVdgQROQbTQhYQk^Ql_RpjTaRW",
+  states: "%jQVQTOOOqQaO'#DRO!]QTO'#ClO!eQaO'#DPOOQ`'#DS'#DSO!yQTO'#ChOOQl'#DR'#DRO#vQnO'#CbO!qQaO'#DPOOQS'#Cx'#CxQVQTOOO!yQTO,59UOOQS'#Cz'#CzO$QQTO'#CnO$YQPO,59WO!yQTO,59[O!yQTO,59[OOQS'#DT'#DTOOQS,59k,59kO$_QPO,59SOOQl'#DQ'#DQO%UQnO'#CvOOQl'#Cw'#CwOOQl'#Cy'#CyO%cQnO,58|OOQS-E6v-E6vO%mQaO1G.pOOQS-E6x-E6xO!yQTO1G.rOOQ`1G.v1G.vO&UQaO1G.vOOQl1G.n1G.nOOQl,58},58}OOQl-E6w-E6wO&mQaO7+$^",
+  stateData: "'X~OrOS~OPPOQVORVOXUOYUOZUO]TOaQO~O_ZOeuXfuXguXhuXpuXxuXiuX~OP[OcbP~Oe_Of_Og`Oh`OpaOxaO~OPPOXUOYUOZUO]TOaQO~OPUOSdOWeOXUOYUOZUO]TO~OpUXxUX~P#_OP[OcbX~OclO~Oe_Of_Og`Oh`OioO~OPUOSdOXUOYUOZUO]TO~OWjXpjXxjX~P$pOpUaxUa~P#_Oe_Of_Og`Oh`Op^ix^ii^i~Oe_Of_Ogdihdipdixdiidi~Oe_Of_Og`Oh`Op`qx`qi`q~OXh~",
+  goto: "$PxPPPPPPy}PPPP!RP!_P!_P!hP!_PPPPP}}!k!q!wPPPP!}#R#Y#h#{TWOYTgVheUOTVYZ_`ehl_SOTYZ_`lR^QQYORiYQhVRqhQ]QRk]TXOYSfVhRpe^SOTYZ_`lVdVehSROYQcTQjZQm_Qn`RrlTbRW",
   nodeNames: "⚠ Identifier Command CommandPartial UnquotedArg Program CommandCall NamedArg NamedArgPrefix Number String Boolean ParenExpr paren Assignment operator Function keyword Params colon BinOp operator operator operator operator paren PartialNamedArg Arg",
-  maxTerm: 39,
+  maxTerm: 40,
   propSources: [highlighting],
   skippedNodes: [0],
-  repeatNodeCount: 2,
-  tokenData: "*W~RjX^!spq!swx#hxy$lyz$qz{$v{|${}!O%Q!P!Q%s!Q![%Y![!]%x!]!^%}!_!`&S#T#Y&X#Y#Z&m#Z#h&X#h#i)[#i#o&X#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~!xYq~X^!spq!s#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~#kUOr#hsw#hwx#}x;'S#h;'S;=`$f<%lO#h~$SUY~Or#hsw#hwx#}x;'S#h;'S;=`$f<%lO#h~$iP;=`<%l#h~$qO]~~$vOi~~${Oe~~%QOg~~%VPh~!Q![%Y~%_QX~!O!P%e!Q![%Y~%hP!Q![%k~%pPX~!Q![%k~%xOf~~%}Oc~~&SOw~~&XO_~Q&[S}!O&X!Q![&X!_!`&h#T#o&XQ&mOWQ~&pV}!O&X!Q![&X!_!`&h#T#U'V#U#b&X#b#c(y#c#o&X~'YU}!O&X!Q![&X!_!`&h#T#`&X#`#a'l#a#o&X~'oU}!O&X!Q![&X!_!`&h#T#g&X#g#h(R#h#o&X~(UU}!O&X!Q![&X!_!`&h#T#X&X#X#Y(h#Y#o&X~(mSZ~}!O&X!Q![&X!_!`&h#T#o&XR)OSaP}!O&X!Q![&X!_!`&h#T#o&X~)_U}!O&X!Q![&X!_!`&h#T#f&X#f#g)q#g#o&X~)tU}!O&X!Q![&X!_!`&h#T#i&X#i#j(R#j#o&X",
+  repeatNodeCount: 3,
+  tokenData: "*W~RjX^!spq!swx#hxy$lyz$qz{$v{|${}!O%Q!P!Q%s!Q![%Y![!]%x!]!^%}!_!`&S#T#Y&X#Y#Z&m#Z#h&X#h#i)[#i#o&X#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~!xYr~X^!spq!s#y#z!s$f$g!s#BY#BZ!s$IS$I_!s$I|$JO!s$JT$JU!s$KV$KW!s&FU&FV!s~#kUOr#hsw#hwx#}x;'S#h;'S;=`$f<%lO#h~$SUY~Or#hsw#hwx#}x;'S#h;'S;=`$f<%lO#h~$iP;=`<%l#h~$qO]~~$vOi~~${Oe~~%QOg~~%VPh~!Q![%Y~%_QX~!O!P%e!Q![%Y~%hP!Q![%k~%pPX~!Q![%k~%xOf~~%}Oc~~&SOx~~&XO_~Q&[S}!O&X!Q![&X!_!`&h#T#o&XQ&mOWQ~&pV}!O&X!Q![&X!_!`&h#T#U'V#U#b&X#b#c(y#c#o&X~'YU}!O&X!Q![&X!_!`&h#T#`&X#`#a'l#a#o&X~'oU}!O&X!Q![&X!_!`&h#T#g&X#g#h(R#h#o&X~(UU}!O&X!Q![&X!_!`&h#T#X&X#X#Y(h#Y#o&X~(mSZ~}!O&X!Q![&X!_!`&h#T#o&XR)OSaP}!O&X!Q![&X!_!`&h#T#o&X~)_U}!O&X!Q![&X!_!`&h#T#f&X#f#g)q#g#o&X~)tU}!O&X!Q![&X!_!`&h#T#i&X#i#j(R#j#o&X",
   tokenizers: [0, 1, tokenizer, argTokenizer, insertSemicolon],
   topRules: {"Program":[0,5]},
-  tokenPrec: 266
+  tokenPrec: 282
 })

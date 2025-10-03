@@ -67,8 +67,12 @@ test('simple command', () => {
   ]
 
   withCommands(commands, () => {
-    expect(`echo hello`).toEvaluateTo('hello')
+    expect(`echo 'hello'`).toEvaluateTo('hello')
   })
+})
+
+test.only('function', () => {
+  expect(`add = fn a b: a + b; add 2 4`).toEvaluateTo(5)
 })
 
 const withCommands = (commands: CommandShape[], fn: () => void) => {

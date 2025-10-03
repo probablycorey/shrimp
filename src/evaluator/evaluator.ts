@@ -3,6 +3,7 @@ import * as terms from '../parser/shrimp.terms.ts'
 import { RuntimeError } from '#evaluator/runtimeError.ts'
 import { assert } from 'console'
 import { assertNever } from '#utils/utils.tsx'
+import { matchingCommands, type CommandShape } from '#editor/commands.ts'
 
 export const evaluate = (input: string, tree: Tree, context: Context) => {
   let result = undefined
@@ -35,6 +36,11 @@ const evaluateNode = (node: SyntaxNode, input: string, context: Context): any =>
       throw new RuntimeError('Error evaluating node', node.from, node.to)
     }
   }
+}
+
+type ResolvedArg = {
+  value: any
+  resolved: boolean
 }
 
 const evaluateEvalNode = (evalNode: EvalNode, input: string, context: Context): any => {
@@ -81,15 +87,104 @@ const evaluateEvalNode = (evalNode: EvalNode, input: string, context: Context): 
       }
     }
 
-    case 'arg': {
-      // Just evaluate the arg's value
-      return evaluateEvalNode(evalNode.value, input, context)
+    case 'function': {
+      const func = (...args: any[]) => {
+        if (args.length !== evalNode.params.length) {
+          throw new RuntimeError(
+            `Function expected ${evalNode.params.length} arguments, got ${args.length}`,
+            evalNode.node.from,
+            evalNode.node.to
+          )
+        }
+
+        // Create new context with parameter bindings
+        const localContext = new Map(context)
+        evalNode.params.forEach((param, index) => {
+          localContext.set(param, args[index])
+        })
+
+        // Evaluate function body with new context
+        return evaluateEvalNode(evalNode.body, input, localContext)
+      }
+
+      return func
     }
 
     case 'command': {
-      // TODO: Actually execute the command
-      // For now, just return undefined
-      return undefined
+      const { match: command } = matchingCommands(evalNode.name)
+      if (!command) {
+        const { from, to } = evalNode.node
+        throw new RuntimeError(`Unknown command "${evalNode.name}"`, from, to)
+      }
+
+      const resolvedArgs: ResolvedArg[] = command.args.map((argShape) => ({
+        value: argShape.default,
+        resolved: argShape.optional ? true : argShape.default !== undefined,
+      }))
+
+      // Filter the args into named and positional
+      const namedArgNodes: NamedArgEvalNode[] = []
+      const positionalArgNodes: PositionalArgEvalNode[] = []
+      evalNode.args.forEach((arg) => {
+        const isNamedArg = 'name' in arg && arg.name !== undefined
+        isNamedArg ? namedArgNodes.push(arg) : positionalArgNodes.push(arg)
+      })
+
+      // First set the named args
+      namedArgNodes.forEach((arg) => {
+        const shapeIndex = command.args.findIndex((def) => def.name === arg.name)
+        const shape = command.args[shapeIndex]
+
+        if (!shape) {
+          const { from, to } = arg.node
+          throw new RuntimeError(`Unknown argument "${arg.name}"`, from, to)
+        } else if (resolvedArgs[shapeIndex]?.resolved) {
+          const { from, to } = arg.node
+          throw new RuntimeError(`Argument "${arg.name}" already set`, from, to)
+        }
+
+        const value = evaluateEvalNode(arg.value, input, context)
+        resolvedArgs[shapeIndex] = { value, resolved: true }
+      })
+
+      // Now set the positional args in order
+      let unresolvedIndex = resolvedArgs.findIndex((arg) => !arg.resolved)
+      positionalArgNodes.forEach((arg) => {
+        const value = evaluateEvalNode(arg.value, input, context)
+        if (unresolvedIndex === -1) {
+          const { from, to } = arg.node
+          throw new RuntimeError(`Too many positional arguments`, from, to)
+        }
+
+        resolvedArgs[unresolvedIndex] = { value, resolved: true }
+        unresolvedIndex = resolvedArgs.findIndex((arg) => !arg.resolved)
+      })
+
+      let executor
+      if (typeof command.execute === 'string') {
+        throw new RuntimeError(
+          `Path-based commands aren't supported yet...`,
+          evalNode.node.from,
+          evalNode.node.to
+        )
+        // Dynamic imports are not supported in Bun test environment
+        // See:
+        // const { default: importedExecutor } = await import(command.execute)
+        // executor = importedExecutor
+        // if (typeof executor !== 'function') {
+        //   throw new RuntimeError(
+        //     `Module "${command.execute}" for command ${command.command} does not export a default function`,
+        //     evalNode.node.from,
+        //     evalNode.node.to
+        //   )
+        // }
+      } else {
+        executor = command.execute
+      }
+
+      const argValues = resolvedArgs.map((arg) => arg.value)
+      const result = executor(...argValues)
+      return result
     }
 
     default:
@@ -99,15 +194,19 @@ const evaluateEvalNode = (evalNode: EvalNode, input: string, context: Context): 
 
 type Operators = '+' | '-' | '*' | '/'
 type Context = Map<string, any>
+type NamedArgEvalNode = { kind: 'arg'; value: EvalNode; name: string; node: SyntaxNode }
+type PositionalArgEvalNode = { kind: 'arg'; value: EvalNode; node: SyntaxNode }
+type ArgEvalNode = NamedArgEvalNode | PositionalArgEvalNode
+type IdentifierEvalNode = { kind: 'identifier'; name: string; node: SyntaxNode }
 type EvalNode =
   | { kind: 'number'; value: number; node: SyntaxNode }
   | { kind: 'string'; value: string; node: SyntaxNode }
   | { kind: 'boolean'; value: boolean; node: SyntaxNode }
-  | { kind: 'identifier'; name: string; node: SyntaxNode }
   | { kind: 'binop'; op: Operators; left: EvalNode; right: EvalNode; node: SyntaxNode }
   | { kind: 'assignment'; name: string; value: EvalNode; node: SyntaxNode }
-  | { kind: 'arg'; name?: string; value: EvalNode; node: SyntaxNode }
-  | { kind: 'command'; name: string; args: EvalNode[]; node: SyntaxNode }
+  | { kind: 'command'; name: string; args: ArgEvalNode[]; node: SyntaxNode }
+  | { kind: 'function'; params: string[]; body: EvalNode; node: SyntaxNode }
+  | IdentifierEvalNode
 
 const syntaxNodeToEvalNode = (node: SyntaxNode, input: string, context: Context): EvalNode => {
   const value = input.slice(node.from, node.to)
@@ -176,6 +275,36 @@ const syntaxNodeToEvalNode = (node: SyntaxNode, input: string, context: Context)
 
       return { kind: 'command', name: commandName, args, node }
     }
+
+    case terms.Function: {
+      const children = getAllChildren(node)
+      if (children.length < 3) {
+        throw new Error(
+          `Parser bug: Function node has ${children.length} children, expected at least 3`
+        )
+      }
+
+      // Structure: fn params : body
+      const [_fn, paramsNode, _colon, ...bodyNodes] = children
+
+      // Extract parameter names
+      const paramNodes = getAllChildren(paramsNode)
+      const params = paramNodes.map((paramNode) => {
+        if (paramNode.type.id !== terms.Identifier) {
+          throw new Error(`Parser bug: Function parameter is not an identifier`)
+        }
+        return input.slice(paramNode.from, paramNode.to)
+      })
+
+      // For now, assume body is a single expression (the rest of the children)
+      const bodyNode = bodyNodes[0]
+      if (!bodyNode) {
+        throw new Error(`Parser bug: Function missing body`)
+      }
+
+      const body = syntaxNodeToEvalNode(bodyNode, input, context)
+      return { kind: 'function', params, body, node }
+    }
   }
 
   throw new RuntimeError(`Unsupported node type "${node.type.name}"`, node.from, node.to)
@@ -241,7 +370,8 @@ const extractCommand = (node: SyntaxNode, input: string) => {
     throw new RuntimeError('Invalid command structure', node.from, node.to)
   }
 
-  const commandName = input.slice(commandNode.firstChild!.from, commandNode.firstChild!.to)
+  const commandNameNode = commandNode.firstChild ?? commandNode
+  const commandName = input.slice(commandNameNode.from, commandNameNode.to)
   const argNodes = children.slice(1) // All the Arg/NamedArg nodes
   return { commandName, commandNode, argNodes }
 }

@@ -5,20 +5,13 @@ export type CommandShape = {
   execute: string | ((...args: any[]) => any)
 }
 
-type ArgShape<T extends keyof ArgTypeMap = keyof ArgTypeMap> =
-  | {
-      name: string
-      type: T
-      description?: string
-      named?: false
-    }
-  | {
-      name: string
-      type: T
-      description?: string
-      named: true
-      default: ArgTypeMap[T]
-    }
+type ArgShape<T extends keyof ArgTypeMap = keyof ArgTypeMap> = {
+  name: string
+  type: T
+  description?: string
+  optional?: boolean
+  default?: ArgTypeMap[T]
+}
 
 type ArgTypeMap = {
   string: string

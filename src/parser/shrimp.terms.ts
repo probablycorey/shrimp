@@ -4,7 +4,7 @@ export const
   Command = 2,
   CommandPartial = 3,
   UnquotedArg = 4,
-  insertedSemi = 31,
+  insertedSemi = 32,
   Program = 5,
   CommandCall = 6,
   NamedArg = 7,
