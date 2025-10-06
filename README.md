@@ -1,89 +1,36 @@
-# Shrimp Parser - Development Context
+# Shrimp Language
 
 ## Overview
 
-Building a command-line language parser using Lezer (CodeMirror's parser system) with TypeScript. The goal is to create a prototype that can parse commands with arguments, similar to shell syntax, with inline hints for autocompletion.
+Shrimp is a shell-like scripting language that combines the simplicity of command-line interfaces with functional programming concepts. Built using Lezer (CodeMirror's parser system) with TypeScript.
 
-## Current Architecture
+## Language Design Philosophy
 
-### Grammar Structure (`shrimp.grammar`)
+- **Everything is an expression** - Commands, assignments, and functions all return values
+- **Whitespace matters** - Spaces distinguish operators from identifiers (e.g., `x-1` is an identifier, `x - 1` is subtraction)
+- **Shell-like command syntax** - `echo hello world` works naturally
+- **Named arguments without quotes** - `tail file.txt lines=30`
+- **Unbound symbols become strings** - `echo hello` treats `hello` as a string if not defined
+- **Simplicity over cleverness** - Each feature should work one way, consistently. Two simple features that are easy to explain beat one complex feature that requires lots of explanation
 
-- **Commands**: Can be complete (`Command`) or partial (`CommandPartial`) for autocomplete
-- **Arguments**: Positional or named (with `name=value` syntax)
-- **Key Challenge**: Handling arbitrary text (like file paths) as arguments without conflicting with operators/keywords
+## Current Status & Goals
 
-### Tokenizer Setup (`tokenizers.ts`)
+### Today's Implementation Goals
+1. **Interpreter Setup** - Rename evaluator to interpreter for clarity
+2. **Command Execution** - Support calling external commands and built-in functions
+3. **Variable Assignment** - Implement assignment with validation using Lezer context tracking
 
-- **Main tokenizer**: Returns `Command`, `CommandPartial`, or `Identifier` based on context
-- **Command matching**: Uses `matchCommand()` to check against available commands
-- **Context-aware**: Uses `stack.canShift()` to return appropriate token based on parse position
-- **Issue**: Second occurrence of command name (e.g., `tail tail`) should be `Identifier` not `Command`
+### Parser Features
+- ✅ Distinguishes between identifiers (assignable) and words (non-assignable)
+- ✅ Smart tokenization for named args (`lines=30` splits, but `./path=value` stays together)
+- ✅ Handles ambiguous cases (bare identifier could be function call or variable reference)
 
-### Key Design Decisions
+## Grammar Architecture
 
-1. **External tokenizers over regular tokens** for commands to enable:
+See `src/parser/example.shrimp` for language examples and `src/parser/shrimp.grammar` for the full grammar.
 
-   - Dynamic command list (can change at runtime)
-   - Partial matching for autocomplete
-   - Context-aware tokenization
-
-2. **Virtual semicolons** for statement boundaries:
-
-   - Using `insertSemicolon` external tokenizer
-   - Inserts at newlines/EOF to keep parser "inside" CommandCall
-   - Prevents `tail t` from parsing as two separate commands
-
-3. **UnquotedArg token** for paths/arbitrary text:
-   - Accepts anything except whitespace/parens/equals
-   - Only valid in command argument context
-   - Avoids conflicts with operators elsewhere
-
-### Current Problems
-
-1. **Parser completes CommandCall too early**
-
-   - After `tail `, cursor shows position in `Program` not `CommandCall`
-   - Makes hint system harder to implement
-
-2. **Command token in wrong context**
-
-   - `tail tail` - second "tail" returns `Command` token but should be `Identifier`
-   - Need better context checking in tokenizer
-
-3. **Inline hints need to be smarter**
-   - Must look backward to find command context
-   - Handle cases where parser has "completed" the command
-
-### Test Infrastructure
-
-- Custom test matchers: `toMatchTree`, `toEvaluateTo`
-- Command source injection for testing: `setCommandSource()`
-- Tests in `shrimp.test.ts`
-
-### File Structure
-
-```
-src/parser/
-  shrimp.grammar     - Lezer grammar definition
-  tokenizers.ts      - External tokenizers
-  shrimp.ts         - Generated parser
-
-src/editor/
-  commands.ts        - Command definitions
-  plugins/
-    inlineHints.tsx  - Autocomplete hint UI
-```
-
-## Next Steps
-
-1. Fix tokenizer context checking with `stack.canShift()`
-2. Improve hint detection for "after command with space" case
-3. Consider if grammar structure changes would help
-
-## Key Concepts to Remember
-
-- Lezer is LR parser - builds tree bottom-up
-- External tokenizers run at each position
-- `@skip { space }` makes whitespace invisible to parser
-- Token precedence matters for overlap resolution
-- `stack.canShift(tokenId)` checks if token is valid at current position
+### Key Token Types
+- **Identifier** - Lowercase/emoji start, can contain dashes/numbers (assignable)
+- **Word** - Any non-whitespace that isn't a valid identifier (paths, URLs, etc.)
+- **FunctionCall** - Identifier followed by arguments
+- **FunctionCallOrIdentifier** - Ambiguous case resolved at runtime

@@ -1,92 +1,37 @@
 import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
-import { CommandPartial, Command, Identifier, UnquotedArg, insertedSemi } from './shrimp.terms'
-import { matchingCommands } from '#editor/commands'
+import { Identifier, Word, NamedArg } from './shrimp.terms'
 
 export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack) => {
   let ch = getFullCodePoint(input, 0)
-  if (!isLowercaseLetter(ch) && !isEmoji(ch)) return
+  if (isWhitespace(ch) || ch === -1) return
 
   let pos = getCharSize(ch)
-  let text = String.fromCodePoint(ch)
+  let isValidIdentifier = isLowercaseLetter(ch) || isEmoji(ch)
 
-  // Continue consuming identifier characters
   while (true) {
     ch = getFullCodePoint(input, pos)
+    if (isWhitespace(ch) || ch === -1) break
 
-    if (isLowercaseLetter(ch) || isDigit(ch) || ch === 45 /* - */ || isEmoji(ch)) {
-      text += String.fromCodePoint(ch)
-      pos += getCharSize(ch)
-    } else {
-      break
+    // Only stop at = if we could parse a NamedArg here
+    if (ch === 61 /* = */ && isValidIdentifier) {
+      break // Stop, let grammar handle identifier = value
     }
+
+    // Track identifier validity
+    if (!isLowercaseLetter(ch) && !isDigit(ch) && ch !== 45 && !isEmoji(ch)) {
+      isValidIdentifier = false
+    }
+
+    pos += getCharSize(ch)
   }
 
   input.advance(pos)
-
-  if (!stack.canShift(Command) && !stack.canShift(CommandPartial)) {
-    input.acceptToken(Identifier)
-    return
-  }
-
-  const { match, partialMatches } = matchingCommands(text)
-  if (match) {
-    input.acceptToken(Command)
-  } else if (partialMatches.length > 0) {
-    input.acceptToken(CommandPartial)
-  } else {
-    input.acceptToken(Identifier)
-  }
+  input.acceptToken(isValidIdentifier ? Identifier : Word)
 })
 
-export const argTokenizer = new ExternalTokenizer((input: InputStream, stack: Stack) => {
-  // Only match if we're in a command argument position
-  if (!stack.canShift(UnquotedArg)) return
-
-  const firstCh = input.peek(0)
-
-  // Don't match if it starts with tokens we handle elsewhere
-  if (
-    firstCh === 39 /* ' */ ||
-    firstCh === 40 /* ( */ ||
-    firstCh === 45 /* - (for negative numbers) */ ||
-    (firstCh >= 48 && firstCh <= 57) /* 0-9 (numbers) */
-  )
-    return
-
-  // Read everything that's not a space, newline, or paren
-  let pos = 0
-  while (true) {
-    const ch = input.peek(pos)
-    if (
-      ch === -1 ||
-      ch === 32 /* space */ ||
-      ch === 10 /* \n */ ||
-      ch === 40 /* ( */ ||
-      ch === 41 /* ) */ ||
-      ch === 61 /* = */
-    )
-      break
-    pos++
-  }
-
-  if (pos > 0) {
-    input.advance(pos)
-    input.acceptToken(UnquotedArg)
-  }
-})
-
-export const insertSemicolon = new ExternalTokenizer((input: InputStream, stack: Stack) => {
-  const next = input.peek(0)
-
-  // We're at a newline or end of file
-  if (next === 10 /* \n */ || next === -1 /* EOF */) {
-    // Check if insertedSemi would be valid here
-    if (stack.canShift(insertedSemi)) {
-      // Don't advance! Virtual token has zero width
-      input.acceptToken(insertedSemi, 0)
-    }
-  }
-})
+const isWhitespace = (ch: number): boolean => {
+  return ch === 32 /* space */ || ch === 10 /* \n */ || ch === 9 /* tab */ || ch === 13 /* \r */
+}
 
 const isLowercaseLetter = (ch: number): boolean => {
   return ch >= 97 && ch <= 122 // a-z

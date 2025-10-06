@@ -30,6 +30,7 @@ await regenerateParser()
 declare module 'bun:test' {
   interface Matchers<T> {
     toMatchTree(expected: string): T
+    toMatchExpression(expected: string): T
     toFailParse(): T
     toEvaluateTo(expected: unknown): T
   }
@@ -153,13 +154,7 @@ const treeToString = (tree: Tree, input: string): string => {
       cursor.parent()
     } else {
       const cleanText = nodeName === 'String' ? text.slice(1, -1) : text
-      // Node names that should be displayed as single tokens (operators, keywords)
-      const singleTokens = ['+', '-', '*', '/', '->', 'fn', '=', 'equals']
-      if (singleTokens.includes(nodeName)) {
-        lines.push(`${indent}${nodeName}`)
-      } else {
-        lines.push(`${indent}${nodeName} ${cleanText}`)
-      }
+      lines.push(`${indent}${nodeName} ${cleanText}`)
     }
   }
 
