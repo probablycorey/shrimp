@@ -16,7 +16,7 @@ Shrimp is a shell-like scripting language that combines the simplicity of comman
 ## Current Status & Goals
 
 ### Today's Implementation Goals
-1. **Interpreter Setup** - Rename evaluator to interpreter for clarity
+1. ✅ **Interpreter Setup** - Renamed evaluator to interpreter for clarity
 2. **Command Execution** - Support calling external commands and built-in functions
 3. **Variable Assignment** - Implement assignment with validation using Lezer context tracking
 

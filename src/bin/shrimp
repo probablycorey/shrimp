@@ -1,7 +1,7 @@
 #! /usr/bin/env bun
 
 import { parser } from '../parser/shrimp.js'
-import { evaluate } from '../evaluator/evaluator.js'
+import { evaluate } from '../interpreter/evaluator.js'
 
 const log = (...args: any[]) => console.log(...args)
 log.error = (...args: any[]) => console.error(...args)

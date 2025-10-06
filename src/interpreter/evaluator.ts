@@ -1,6 +1,6 @@
 import { Tree, type SyntaxNode } from '@lezer/common'
 import * as terms from '../parser/shrimp.terms.ts'
-import { RuntimeError } from '#evaluator/runtimeError.ts'
+import { RuntimeError } from '#interpreter/runtimeError.ts'
 import { assert } from 'console'
 import { assertNever } from '#utils/utils.tsx'
 import { matchingCommands, type CommandShape } from '#editor/commands.ts'

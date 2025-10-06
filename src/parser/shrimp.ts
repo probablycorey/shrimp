@@ -4,16 +4,16 @@ import {tokenizer} from "./tokenizers"
 import {highlighting} from "./highlight.js"
 export const parser = LRParser.deserialize({
   version: 14,
-  states: "$nQQOTOOOQOTO'#CcOfOPO'#CtOqOPO'#CtOOOO'#Cx'#CxO!POPO'#CxO![OPOOOOOO'#C`'#C`O!aOPO'#CoQQOTOOO!fOPO,58}O!|OTO'#CpO#TOPO,58{O#`OQO,59UOOOS,59Z,59ZOOOS-E6m-E6mOOOO1G.i1G.iOOOO'#Ct'#CtO#nOPO'#CtOOOO'#Cb'#CbOOOO'#Cs'#CsOOOO,59[,59[OOOO-E6n-E6nO#|OPO1G.pO$ROTO,59SO$cOTO7+$[OOOO1G.m1G.mOOOO<<Gv<<Gv",
-  stateData: "$j~OPROQQOWQOXQOYQOiPO~OfhXmSXjSX~OfZOfhXm]Xj]X~OflXmSXjSX~Of]O~Om^O~Oj`O~OQaOWaOXaOYaOiPO~OPbO~P!kOfZOmTajTa~O_gO`gOagObgO~OkhOfhXmhXjhX~OfiO~OPaOf[am[aj[a~P!kOPaO~P!kO",
-  goto: "#UmPPPPnuz}PPPzzu!XPPPP!a!gPP!m!pPPP!|SWOXRYPVVOPXRdZUQOPXVaZhiQSiVTOPXQXOR_XQ[RRf[ReZWSOPXiQcZRjhUUOPXRki",
-  nodeNames: "⚠ Identifier Word Program Expression FunctionCall PositionalArg ParenExpr String Number Boolean NamedArg IncompleteNamedArg FunctionCallOrIdentifier BinOp operator operator operator operator",
-  maxTerm: 29,
+  states: "&YQVQTOOOnQPO'#DSO!tQUO'#DSO#OQPOOOOQO'#DR'#DRO#oQTO'#CbOOQS'#DP'#DPO#vQTO'#CnOOQO'#C|'#C|O$OQPO'#CvQVQTOOOOQS'#DO'#DOOOQS'#Ca'#CaO$TQTO'#ClOOQS'#C}'#C}OOQS'#Cw'#CwO$[QUO,58zOVQTO,59`O$lQTO,58}O$lQTO,58}O$sQPO,58|O%UQUO'#DSO%]QPO,58|OOQS'#Cx'#CxO%bQTO'#CpO%jQPO,59YOOQS,59b,59bOOQS-E6t-E6tOOQS,59W,59WOOQS-E6u-E6uOOQO1G.z1G.zOOQO'#DS'#DSOOQO1G.i1G.iO%oQPO1G.iOOQS1G.h1G.hOOQS-E6v-E6vO&WQPO1G.tO$lQTO7+$`O&]QPO<<GzOOQOAN=fAN=f",
+  stateData: "&q~OoOS~OPQOQUO]UO^UO_UOcVOtTO~OWvXXvXYvXZvXxpX~OPZOQUO]UO^UO_UOa]OtTOWvXXvXYvXZvX~OiaOx[X~P!POWbOXbOYcOZcO~OQUO]UO^UO_UOtTO~OPeO~P#^OPgOedP~OxjO~OPZO~P#^OPZOa]OxSawSa~P#^OPoO~P#^OwrOWvXXvXYvXZvX~Ow[X~P!POwrO~OPgOedX~OetO~OWbOXbOYViZVixViwVigVi~OfuO~OWbOXbOYcOZcOgwO~O^Z~",
+  goto: "$kwPPPPx!Q!V!dPPPPxPPP!QP!mP!rPPP!mP!u!{#SPPP#Y#a#f#nP#}$[UWOYaRfTV^Q`egUOQTY]`abceu_SOTYabcuVWOYaRiVQYORkYS`QeRm`QhVRshSXOYRnaV_Q`eU[Q`eRl]^SOTYabcuXZQ]`eUPOYaQdTVobcuWROTYaQpbQqcRvu",
+  nodeNames: "⚠ Identifier Word Program FunctionCall PositionalArg ParenExpr BinOp operator operator operator operator FunctionCallOrIdentifier String Number Boolean NamedArg NamedArgPrefix FunctionDef fn Params : do end Assignment =",
+  maxTerm: 40,
   propSources: [highlighting],
   skippedNodes: [0],
-  repeatNodeCount: 2,
-  tokenData: "%i~R^YZ}pq!Swx!Xxy#]yz#bz{#g{|#l}!O#q!P!Q$d!Q![#y!_!`$i#Y#Z$n#h#i%]~~}~!SOm~~!XOf~~![UOr!Xsw!Xwx!nx;'S!X;'S;=`#V<%lO!X~!sUW~Or!Xsw!Xwx!nx;'S!X;'S;=`#V<%lO!X~#YP;=`<%l!X~#bOi~~#gOj~~#lO_~~#qOa~R#vPbQ!Q![#yP$OQXP!O!P$U!Q![#yP$XP!Q![$[P$aPXP!Q![$[~$iO`~~$nOk~~$qP#T#U$t~$wP#`#a$z~$}P#g#h%Q~%TP#X#Y%W~%]OY~~%`P#f#g%c~%fP#i#j%Q",
+  repeatNodeCount: 3,
+  tokenData: ")c~RdYZ!apq!fwx!kxy#oyz#tz{#y{|$O}!O$T!P!Q$v!Q![$]![!]${!_!`%Q#T#W%V#W#X%e#X#Y&P#Y#Z&z#Z#h%V#h#i(s#i#o%V~~!a~!fOx~~!kOo~~!nUOr!ksw!kwx#Qx;'S!k;'S;=`#i<%lO!k~#VU]~Or!ksw!kwx#Qx;'S!k;'S;=`#i<%lO!k~#lP;=`<%l!k~#tOt~~#yOw~~$OOW~~$TOY~~$YPZ~!Q![$]~$bQ^~!O!P$h!Q![$]~$kP!Q![$n~$sP^~!Q![$n~${OX~~%QOe~~%VOi~Q%YQ!_!`%`#T#o%VQ%eOaQR%hS!_!`%`#T#c%V#c#d%t#d#o%VR%yQfP!_!`%`#T#o%VR&SS!_!`%`#T#b%V#b#c&`#c#o%VR&cS!_!`%`#T#W%V#W#X&o#X#o%VR&tQgP!_!`%`#T#o%V~&}T!_!`%`#T#U'^#U#b%V#b#c(h#c#o%V~'aS!_!`%`#T#`%V#`#a'm#a#o%V~'pS!_!`%`#T#g%V#g#h'|#h#o%V~(PS!_!`%`#T#X%V#X#Y(]#Y#o%V~(bQ_~!_!`%`#T#o%VR(mQcP!_!`%`#T#o%V~(vS!_!`%`#T#f%V#f#g)S#g#o%V~)VS!_!`%`#T#i%V#i#j'|#j#o%V",
   tokenizers: [0, 1, tokenizer],
   topRules: {"Program":[0,3]},
-  tokenPrec: 0
+  tokenPrec: 260
 })

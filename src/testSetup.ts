@@ -3,7 +3,7 @@ import { Tree, TreeCursor } from '@lezer/common'
 import { parser } from '#parser/shrimp'
 import { $ } from 'bun'
 import { assert } from '#utils/utils'
-import { evaluate } from '#evaluator/evaluator'
+import { evaluate } from '#interpreter/evaluator'
 
 const regenerateParser = async () => {
   let generate = true

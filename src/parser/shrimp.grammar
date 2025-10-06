@@ -1,7 +1,13 @@
 @external propSource highlighting from "./highlight.js"
-@top Program { (Expression newline)* }
 
-@tokens {  
+@skip { space }
+
+@top Program { (line newline)* }
+
+@tokens {
+  @precedence { Number "-" }
+  
+  NamedArgPrefix { $[a-z]+ "=" }
   Number { "-"? $[0-9]+ ('.' $[0-9]+)? }
   Boolean { "true" | "false" }
   String { '\'' !["]* '\'' }
@@ -9,6 +15,11 @@
   space { " " }
   leftParen { "(" }
   rightParen { ")" }
+  ":"
+  "fn"
+  "do"
+  "end"
+  "="
   "+"[@name=operator]
   "-"[@name=operator]
   "*"[@name=operator]
@@ -16,20 +27,28 @@
 }
 
 @external tokens tokenizer from "./tokenizers" { Identifier, Word }
+
 @precedence {   
   multiplicative @left,
   additive @left
+  call
 }
 
-Expression {
-  FunctionCall |
+line {
+  FunctionCall | 
   FunctionCallOrIdentifier |
+  FunctionDef |
+  Assignment |
+  expressionWithoutIdentifier
+}
+
+expression {
+  expressionWithoutIdentifier | Identifier
+}
+
+expressionWithoutIdentifier {
   BinOp |
-  ParenExpr | 
-  Word | 
-  String | 
-  Number | 
-  Boolean
+  valueWithoutIdentifier
 }
 
 
@@ -38,11 +57,11 @@ FunctionCallOrIdentifier {
 }
 
 FunctionCall {
-  Identifier (~ambig space arg)+
+  Identifier arg+
 }
 
 arg {
-  PositionalArg | NamedArg | IncompleteNamedArg
+  PositionalArg | NamedArg
 }
 
 PositionalArg {
@@ -50,29 +69,36 @@ PositionalArg {
 }
 
 NamedArg {
-  Identifier "=" value
+  NamedArgPrefix value
 }
 
-IncompleteNamedArg {
-  Identifier "="
+FunctionDef {
+  "fn" Params ":" "do" expression "end"
+}
+
+Params {
+  Identifier*
+}
+
+Assignment {
+  Identifier "=" line
 }
 
 BinOp {
-  operand ~ambig space !multiplicative "*" space operand |
-  operand ~ambig space !multiplicative "/" space operand |
-  operand ~ambig space !additive "+" space operand |
-  operand ~ambig space !additive "-" space operand
+  expression !multiplicative "*" expression |
+  expression !multiplicative "/" expression |
+  expression !additive "+" expression |
+  expression !additive "-" expression
 }
-
-operand {
-  value | BinOp
-}
-
 
 ParenExpr {
-  leftParen Expression rightParen
+  leftParen (expressionWithoutIdentifier | FunctionCall | FunctionCallOrIdentifier) rightParen
 }
 
 value {
-  ParenExpr | Identifier | Word | String | Number | Boolean
+  valueWithoutIdentifier | Identifier
+}
+
+valueWithoutIdentifier {
+  ParenExpr | Word | String | Number | Boolean
 }

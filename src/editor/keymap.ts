@@ -1,5 +1,5 @@
 import { outputSignal } from '#editor/editor'
-import { evaluate } from '#evaluator/evaluator'
+import { evaluate } from '#interpreter/evaluator'
 import { parser } from '#parser/shrimp'
 import { errorMessage, log } from '#utils/utils'
 import { keymap } from '@codemirror/view'

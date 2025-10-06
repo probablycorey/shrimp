@@ -1,5 +1,5 @@
 import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
-import { Identifier, Word, NamedArg } from './shrimp.terms'
+import { Identifier, Word } from './shrimp.terms'
 
 export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack) => {
   let ch = getFullCodePoint(input, 0)
@@ -7,18 +7,15 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
 
   let pos = getCharSize(ch)
   let isValidIdentifier = isLowercaseLetter(ch) || isEmoji(ch)
+  const canBeWord = stack.canShift(Word)
 
   while (true) {
     ch = getFullCodePoint(input, pos)
     if (isWhitespace(ch) || ch === -1) break
 
-    // Only stop at = if we could parse a NamedArg here
-    if (ch === 61 /* = */ && isValidIdentifier) {
-      break // Stop, let grammar handle identifier = value
-    }
-
     // Track identifier validity
     if (!isLowercaseLetter(ch) && !isDigit(ch) && ch !== 45 && !isEmoji(ch)) {
+      if (!canBeWord) break
       isValidIdentifier = false
     }
 
