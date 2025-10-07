@@ -192,24 +192,22 @@ describe('BinOp', () => {
 
 describe('Fn', () => {
   test('parses function no parameters', () => {
-    expect('fn: do 1 end').toMatchTree(`
+    expect('fn: 1 end').toMatchTree(`
       FunctionDef
         fn fn
         Params 
         : :
-        do do
         Number 1
         end end`)
   })
 
   test('parses function with single parameter', () => {
-    expect('fn x: do x + 1 end').toMatchTree(`
+    expect('fn x: x + 1 end').toMatchTree(`
       FunctionDef
         fn fn
         Params
           Identifier x
         : :
-        do do
         BinOp
           Identifier x
           operator +
@@ -218,23 +216,44 @@ describe('Fn', () => {
   })
 
   test('parses function with multiple parameters', () => {
-    expect('fn x y: do x * y end').toMatchTree(`
+    expect('fn x y: x * y end').toMatchTree(`
       FunctionDef
         fn fn
         Params
           Identifier x
           Identifier y
         : :
-        do do
         BinOp
           Identifier x
           operator *
           Identifier y
         end end`)
   })
+
+  test('parses multiline function with multiple statements', () => {
+    expect(`fn x y:
+  x * y
+  x + 9
+end`).toMatchTree(`
+      FunctionDef
+        fn fn
+        Params
+          Identifier x
+          Identifier y
+        : :
+        BinOp
+          Identifier x
+          operator *
+          Identifier y
+        BinOp
+          Identifier x
+          operator +
+          Number 9
+        end end`)
+  })
 })
 
-describe('abmiguity', () => {
+describe('ambiguity', () => {
   test('parses ambiguous expressions correctly', () => {
     expect('a + -3').toMatchTree(`
       BinOp
@@ -267,7 +286,7 @@ describe('Assignment', () => {
   })
 
   test('parses assignment with functions', () => {
-    expect('add = fn a b: do a + b end').toMatchTree(`
+    expect('add = fn a b: a + b end').toMatchTree(`
       Assignment
         Identifier add
         = =
@@ -277,7 +296,6 @@ describe('Assignment', () => {
             Identifier a
             Identifier b
           : :
-          do do
           BinOp
             Identifier a
             operator +

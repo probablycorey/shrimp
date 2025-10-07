@@ -17,7 +17,6 @@
   rightParen { ")" }
   ":"
   "fn"
-  "do"
   "end"
   "="
   "+"[@name=operator]
@@ -73,7 +72,15 @@ NamedArg {
 }
 
 FunctionDef {
-  "fn" Params ":" "do" expression "end"
+  singleLineFunctionDef | multiLineFunctionDef
+}
+
+singleLineFunctionDef {
+  "fn" Params ":" expression "end"
+}
+
+multiLineFunctionDef {
+  "fn" Params ":" newline (expression newline)* "end"
 }
 
 Params {
