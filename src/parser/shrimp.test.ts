@@ -234,6 +234,26 @@ describe('Fn', () => {
   })
 })
 
+describe('abmiguity', () => {
+  test('parses ambiguous expressions correctly', () => {
+    expect('a + -3').toMatchTree(`
+      BinOp
+        Identifier a
+        operator +
+        Number -3
+    `)
+  })
+
+  test('parses ambiguous expressions correctly', () => {
+    expect('a-var + a-thing').toMatchTree(`
+      BinOp
+        Identifier a-var
+        operator +
+        Identifier a-thing
+    `)
+  })
+})
+
 describe('Assignment', () => {
   test('parses assignment with addition', () => {
     expect('x = 5 + 3').toMatchTree(`
