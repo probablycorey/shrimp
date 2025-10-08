@@ -15,4 +15,4 @@ export const
   NamedArgPrefix = 17,
   FunctionDef = 18,
   Params = 20,
-  Assignment = 23
+  Assign = 23

@@ -61,12 +61,6 @@ describe('calling functions', () => {
     `)
   })
 
-  test.skip('when no commands match, falls back to Identifier', () => {
-    expect('omgwtf').toMatchTree(`
-      Identifier omgwtf
-    `)
-  })
-
   test('Incomplete namedArg', () => {
     expect('tail lines=').toMatchTree(`
       FunctionCall
@@ -106,6 +100,16 @@ describe('Parentheses', () => {
               Number 3
               operator +
               Number 3`)
+  })
+
+  test('a word can be contained in parens', () => {
+    expect('(basename ./cool)').toMatchTree(`
+      ParenExpr
+        FunctionCall
+          Identifier basename
+          PositionalArg
+            Word ./cool
+      `)
   })
 
   test('nested parentheses', () => {
@@ -192,17 +196,16 @@ describe('BinOp', () => {
 
 describe('Fn', () => {
   test('parses function no parameters', () => {
-    expect('fn: 1 end').toMatchTree(`
+    expect('fn: 1').toMatchTree(`
       FunctionDef
         fn fn
         Params 
         : :
-        Number 1
-        end end`)
+        Number 1`)
   })
 
   test('parses function with single parameter', () => {
-    expect('fn x: x + 1 end').toMatchTree(`
+    expect('fn x: x + 1').toMatchTree(`
       FunctionDef
         fn fn
         Params
@@ -211,12 +214,11 @@ describe('Fn', () => {
         BinOp
           Identifier x
           operator +
-          Number 1
-        end end`)
+          Number 1`)
   })
 
   test('parses function with multiple parameters', () => {
-    expect('fn x y: x * y end').toMatchTree(`
+    expect('fn x y: x * y').toMatchTree(`
       FunctionDef
         fn fn
         Params
@@ -226,8 +228,7 @@ describe('Fn', () => {
         BinOp
           Identifier x
           operator *
-          Identifier y
-        end end`)
+          Identifier y`)
   })
 
   test('parses multiline function with multiple statements', () => {
@@ -273,10 +274,55 @@ describe('ambiguity', () => {
   })
 })
 
-describe('Assignment', () => {
+describe('newlines', () => {
+  test('parses multiple statements separated by newlines', () => {
+    expect(`x = 5
+y = 2`).toMatchTree(`
+      Assign
+        Identifier x
+        = =
+        Number 5
+      Assign
+        Identifier y
+        = =
+        Number 2`)
+  })
+
+  test('parses statements separated by semicolons', () => {
+    expect(`x = 5; y = 2`).toMatchTree(`
+      Assign
+        Identifier x
+        = =
+        Number 5
+      Assign
+        Identifier y
+        = =
+        Number 2`)
+  })
+
+  test('parses statement with word and a semicolon', () => {
+    expect(`a = hello; 2`).toMatchTree(`
+      Assign
+        Identifier a
+        = =
+        FunctionCallOrIdentifier
+          Identifier hello
+      Number 2`)
+  })
+})
+
+describe('Assign', () => {
+  test('parses simple assignment', () => {
+    expect('x = 5').toMatchTree(`
+      Assign
+        Identifier x
+        = =
+        Number 5`)
+  })
+
   test('parses assignment with addition', () => {
     expect('x = 5 + 3').toMatchTree(`
-      Assignment
+      Assign
         Identifier x
         = =
         BinOp
@@ -286,8 +332,8 @@ describe('Assignment', () => {
   })
 
   test('parses assignment with functions', () => {
-    expect('add = fn a b: a + b end').toMatchTree(`
-      Assignment
+    expect('add = fn a b: a + b').toMatchTree(`
+      Assign
         Identifier add
         = =
         FunctionDef
@@ -299,7 +345,31 @@ describe('Assignment', () => {
           BinOp
             Identifier a
             operator +
-            Identifier b
-          end end`)
+            Identifier b`)
+  })
+})
+
+describe('whitespace', () => {
+  test('trims leading and trailing whitespace in expected tree', () => {
+    expect(`
+      3
+
+
+      fn x y:
+  x
+end
+
+`).toMatchTree(`
+      Number 3
+
+      FunctionDef
+        fn fn
+        Params
+          Identifier x
+          Identifier y
+        : :
+        Identifier x
+        end end
+    `)
   })
 })

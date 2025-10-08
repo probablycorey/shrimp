@@ -4,16 +4,16 @@ import {tokenizer} from "./tokenizers"
 import {highlighting} from "./highlight.js"
 export const parser = LRParser.deserialize({
   version: 14,
-  states: "'UQVQTOOOnQPO'#DSO!tQUO'#DSO#OQPOOOOQO'#DR'#DRO#oQTO'#CbOOQS'#DP'#DPO#vQTO'#DUOOQO'#Cn'#CnOOQO'#C|'#C|O$OQPO'#CuQVQTOOOOQS'#DO'#DOOOQS'#Ca'#CaO$TQTO'#ClOOQS'#C}'#C}OOQS'#Cv'#CvO$[QUO,58zOVQTO,59_O$lQTO,58}O$lQTO,58}O$sQPO,58|O%UQUO'#DSO%]QPO,58|OOQS'#Cw'#CwO%bQTO'#CpO%jQPO,59pOOQS,59a,59aOOQS-E6s-E6sOOQS,59W,59WOOQS-E6t-E6tOOQO1G.y1G.yOOQO'#DS'#DSOOQO1G.i1G.iO%oQPO1G.iOOQS1G.h1G.hOOQS-E6u-E6uO&WQTO1G/[O&bQPO7+$vO&sQTO7+$wOOQO<<Hb<<HbO&}QPO'#CxO'`QTO<<HcOOQO<<Hc<<HcOOQS,59d,59dOOQS-E6v-E6vOOQOAN=}AN=}",
-  stateData: "'m~OoOS~OPQOQUO]UO^UO_UOcVOtTO~OWvXXvXYvXZvXzpX~OP[OQUO]UO^UO_UOa^OtTOWvXXvXYvXZvX~OhbOz[X~P!POWcOXcOYdOZdO~OQUO]UO^UO_UOtTO~OPfO~P#^OPhOedP~OzkO~OP[O~P#^OP[Oa^OzSawSa~P#^OPpO~P#^OwsOWvXXvXYvXZvX~Ow[X~P!POwsO~OPhOedX~OeuO~OWcOXcOYViZVizViwVifVi~OPpOzwO~P#^OWcOXcOYdOZdOfxO~OPpOf{O~P#^OWcOXcOYdOZdOz|O~OPpOf!OO~P#^O^Z~",
-  goto: "%VzPPPP{!T!Y!iPPPP{PPP!TP!tP!yPP!tP!|#S#Z#aPPP#g#n#s#{P$^$mP%Q%QUXOZbRgTV_QafkUOQTZ^abcdfuwzcSOTZbcduwzVXOZbRjVQZORlZSaQfRnaQiVRtiQzwR}zSYOZRobV`QafU]QafRm^bSOTZbcduwzX[Q^afUPOZbQeTZpcduwzWROTZbQqcQrdQvuTywzVWOZb",
-  nodeNames: "⚠ Identifier Word Program FunctionCall PositionalArg ParenExpr BinOp operator operator operator operator FunctionCallOrIdentifier String Number Boolean NamedArg NamedArgPrefix FunctionDef fn Params : end Assignment =",
-  maxTerm: 42,
+  states: "'[OVQTOOOqQPO'#DTO!zQUO'#DTO#XQPOOOOQO'#DS'#DSO#xQTO'#CbOOQS'#DQ'#DQO$PQTO'#DVOOQO'#Cn'#CnOOQO'#C}'#C}O$XQPO'#C|OOQS'#Cu'#CuQ$aQTOOOOQS'#DP'#DPOOQS'#Ca'#CaO$hQTO'#ClOOQS'#DO'#DOOOQS'#Cv'#CvO$oQUO,58zO%SQTO,59_O%^QTO,58}O%^QTO,58}O%eQPO,58|O%vQUO'#DTO%}QPO,58|OOQS'#Cw'#CwO&SQTO'#CpO&[QPO,59qOOQS,59h,59hOOQS-E6s-E6sQOQPOOOOQS,59W,59WOOQS-E6t-E6tOOQO1G.y1G.yOOQO'#DT'#DTOOQO1G.i1G.iO&aQPO1G.iOOQS1G.h1G.hOOQS-E6u-E6uO&xQTO1G/]O'SQPO7+$wO'hQTO7+$xO'rQPO'#CxO(TQTO<<HdOOQO<<Hd<<HdOOQS,59d,59dOOQS-E6v-E6vOOQOAN>OAN>O",
+  stateData: "(b~OoOS~OPQOQUO]UO^UO_UOcVOuTO{ZO~OWwXXwXYwXZwX{qX|qX~OP]OQUO]UO^UO_UOa_OuTOWwXXwXYwXZwX~OhcO{[X|[X~P!VOWdOXdOYeOZeO~OQUO]UO^UO_UOuTO~OPgO~P#gOPiOedP~O{lO|lO~O|nO~PVOP]O~P#gOP]Oa_O{Sa|SaxSa~P#gOPQOcVO~P#gOPrO~P#gOxuOWwXXwXYwXZwX~Ox[X~P!VOxuO~OPiOedX~OewO~OWdOXdOYViZVi{Vi|VixVi~OPrO{yO~P#gOWdOXdOYeOZeO{yq|yq~OPrOf|O~P#gOWdOXdOYeOZeO{}O~OPrOf!PO~P#gO^Z~",
+  goto: "%[{PPPP|!U!Z!jPPPP|PPP!UP!uP!zPP!uP!}#T#[#bPPP#h#l#s#x$QP$c$rP%V%VUXO[cRhTV`QbgkUOQT[_bcdegwy{cSOT[cdewy{VXO[cRkVQ[ORm[SbQgRpbQjVRvjQ{yR!O{TZO[SYO[RqcVaQbgU^QbgRo_bSOT[cdewy{X]Q_bgUPO[cQfTZrdewy{WROT[cQsdQteQxwTzy{VWO[c",
+  nodeNames: "⚠ Identifier Word Program FunctionCall PositionalArg ParenExpr BinOp operator operator operator operator FunctionCallOrIdentifier String Number Boolean NamedArg NamedArgPrefix FunctionDef fn Params : end Assign =",
+  maxTerm: 44,
   propSources: [highlighting],
   skippedNodes: [0],
   repeatNodeCount: 4,
-  tokenData: "(t~RcYZ!^pq!cwx!hxy#lyz#qz{#v{|#{}!O$Q!P!Q$s!Q![$Y![!]$x!_!`$}#T#X%S#X#Y%b#Y#Z&]#Z#h%S#h#i(U#i#o%S~~!^~!cOz~~!hOo~~!kUOr!hsw!hwx!}x;'S!h;'S;=`#f<%lO!h~#SU]~Or!hsw!hwx!}x;'S!h;'S;=`#f<%lO!h~#iP;=`<%l!h~#qOt~~#vOw~~#{OW~~$QOY~~$VPZ~!Q![$Y~$_Q^~!O!P$e!Q![$Y~$hP!Q![$k~$pP^~!Q![$k~$xOX~~$}Oe~~%SOh~Q%VQ!_!`%]#T#o%SQ%bOaQR%eS!_!`%]#T#b%S#b#c%q#c#o%SR%tS!_!`%]#T#W%S#W#X&Q#X#o%SR&VQfP!_!`%]#T#o%S~&`T!_!`%]#T#U&o#U#b%S#b#c'y#c#o%S~&rS!_!`%]#T#`%S#`#a'O#a#o%S~'RS!_!`%]#T#g%S#g#h'_#h#o%S~'bS!_!`%]#T#X%S#X#Y'n#Y#o%S~'sQ_~!_!`%]#T#o%SR(OQcP!_!`%]#T#o%S~(XS!_!`%]#T#f%S#f#g(e#g#o%S~(hS!_!`%]#T#i%S#i#j'_#j#o%S",
+  tokenData: ")P~ReXY!dYZ!ipq!dwx!nxy#ryz#wz{#|{|$R}!O$W!P!Q$y!Q![$`![!]%O!]!^!i!_!`%T#T#X%Y#X#Y%h#Y#Z&c#Z#h%Y#h#i([#i#o%Y~~(z~!iOo~~!nO{~~!qUOr!nsw!nwx#Tx;'S!n;'S;=`#l<%lO!n~#YU]~Or!nsw!nwx#Tx;'S!n;'S;=`#l<%lO!n~#oP;=`<%l!n~#wOu~~#|Ox~~$ROW~~$WOY~~$]PZ~!Q![$`~$eQ^~!O!P$k!Q![$`~$nP!Q![$q~$vP^~!Q![$q~%OOX~~%TOe~~%YOh~Q%]Q!_!`%c#T#o%YQ%hOaQR%kS!_!`%c#T#b%Y#b#c%w#c#o%YR%zS!_!`%c#T#W%Y#W#X&W#X#o%YR&]QfP!_!`%c#T#o%Y~&fT!_!`%c#T#U&u#U#b%Y#b#c(P#c#o%Y~&xS!_!`%c#T#`%Y#`#a'U#a#o%Y~'XS!_!`%c#T#g%Y#g#h'e#h#o%Y~'hS!_!`%c#T#X%Y#X#Y't#Y#o%Y~'yQ_~!_!`%c#T#o%YR(UQcP!_!`%c#T#o%Y~(_S!_!`%c#T#f%Y#f#g(k#g#o%Y~(nS!_!`%c#T#i%Y#i#j'e#j#o%Y~)PO|~",
   tokenizers: [0, 1, tokenizer],
   topRules: {"Program":[0,3]},
-  tokenPrec: 302
+  tokenPrec: 337
 })

@@ -1,0 +1,3 @@
+[submodule "packages/ReefVM"]
+	path = packages/ReefVM
+	url = git@54.219.130.253:defunkt/ReefVM.git

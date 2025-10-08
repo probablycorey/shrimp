@@ -1,7 +1,7 @@
-export class RuntimeError extends Error {
+export class CompilerError extends Error {
   constructor(message: string, private from: number, private to: number) {
     super(message)
-    this.name = 'RuntimeError'
+    this.name = 'CompilerError'
     this.message = message
   }
 

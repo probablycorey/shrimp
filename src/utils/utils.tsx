@@ -12,7 +12,7 @@ export const errorMessage = (error: unknown) => {
   return String(error)
 }
 
-export function assert(condition: boolean, message: string): asserts condition {
+export function assert(condition: any, message: string): asserts condition {
   if (!condition) {
     throw new Error(message)
   }

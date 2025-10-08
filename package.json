@@ -3,12 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "pretest": "bun generate-parser",
     "serve": "bun --hot src/server/server.tsx",
     "generate-parser": "lezer-generator src/parser/shrimp.grammar --typeScript -o src/parser/shrimp.ts"
   },
   "dependencies": {
+    "reefvm": "workspace:*",
     "@codemirror/view": "^6.38.3",
     "@lezer/generator": "^1.8.0",
     "bun-plugin-tailwind": "^0.0.15",

@@ -2,8 +2,9 @@ import { expect } from 'bun:test'
 import { Tree, TreeCursor } from '@lezer/common'
 import { parser } from '#parser/shrimp'
 import { $ } from 'bun'
-import { assert } from '#utils/utils'
-import { evaluate } from '#interpreter/evaluator'
+import { assert, assertNever, errorMessage } from '#utils/utils'
+import { Compiler } from '#compiler/compiler'
+import { VM, type Value } from 'reefvm'
 
 const regenerateParser = async () => {
   let generate = true
@@ -32,7 +33,8 @@ declare module 'bun:test' {
     toMatchTree(expected: string): T
     toMatchExpression(expected: string): T
     toFailParse(): T
-    toEvaluateTo(expected: unknown): T
+    toEvaluateTo(expected: unknown): Promise<T>
+    toFailEvaluation(): Promise<T>
   }
 }
 
@@ -91,46 +93,48 @@ expect.extend({
     }
   },
 
-  toEvaluateTo(received: unknown, expected: unknown) {
+  async toEvaluateTo(received: unknown, expected: unknown) {
     assert(typeof received === 'string', 'toEvaluateTo can only be used with string values')
 
     try {
-      const tree = parser.parse(received)
-      let hasErrors = false
-      tree.iterate({
-        enter(n) {
-          if (n.type.isError) {
-            hasErrors = true
-            return false
-          }
-        },
-      })
+      const compiler = new Compiler(received)
+      const vm = new VM(compiler.bytecode)
+      await vm.run()
+      const result = await vm.run()
+      const value = VMResultToValue(result)
 
-      if (hasErrors) {
-        const actual = treeToString(tree, received)
-        return {
-          message: () =>
-            `Expected input to evaluate successfully, but it had syntax errors:\n${actual}`,
-          pass: false,
-        }
+      if (value === expected) {
+        return { pass: true }
       } else {
-        const context = new Map<string, unknown>()
-        const result = evaluate(received, tree, context)
-        if (Object.is(result, expected)) {
-          return { pass: true }
-        } else {
-          const expectedStr = JSON.stringify(expected)
-          const resultStr = JSON.stringify(result)
-          return {
-            message: () => `Expected evaluation to be ${expectedStr}, but got ${resultStr}`,
-            pass: false,
-          }
+        return {
+          message: () => `Expected evaluation to be ${expected}, but got ${value}`,
+          pass: false,
         }
       }
     } catch (error) {
       return {
         message: () => `Evaluation threw an error:\n${(error as Error).message}`,
         pass: false,
+      }
+    }
+  },
+
+  async toFailEvaluation(received: unknown) {
+    assert(typeof received === 'string', 'toFailEvaluation can only be used with string values')
+
+    try {
+      const compiler = new Compiler(received)
+      const vm = new VM(compiler.bytecode)
+      await vm.run()
+
+      return {
+        message: () => `Expected evaluation to fail, but it succeeded.`,
+        pass: false,
+      }
+    } catch (error) {
+      return {
+        message: () => `Evaluation failed as expected: ${errorMessage(error)}`,
+        pass: true,
       }
     }
   },
@@ -187,9 +191,23 @@ const trimWhitespace = (str: string): string => {
     .join('\n')
 }
 
-const expectString = (value: unknown): string => {
-  if (typeof value !== 'string') {
-    throw new Error('Expected a string input')
+const VMResultToValue = (result: Value): unknown => {
+  if (result.type === 'number' || result.type === 'boolean' || result.type === 'string') {
+    return result.value
+  } else if (result.type === 'null') {
+    return null
+  } else if (result.type === 'array') {
+    return result.value.map(VMResultToValue)
+  } else if (result.type === 'dict') {
+    const obj: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(result.value)) {
+      obj[key] = VMResultToValue(val)
+    }
+
+    return obj
+  } else if (result.type === 'function') {
+    return Function
+  } else {
+    assertNever(result)
   }
-  return value
 }

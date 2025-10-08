@@ -2,7 +2,12 @@
 
 @skip { space }
 
-@top Program { (line newline)* }
+@top Program { (statement | newlineOrSemicolon)+ eof?}
+
+statement { 
+  line newlineOrSemicolon |
+  line eof
+}
 
 @tokens {
   @precedence { Number "-" }
@@ -11,8 +16,9 @@
   Number { "-"? $[0-9]+ ('.' $[0-9]+)? }
   Boolean { "true" | "false" }
   String { '\'' !["]* '\'' }
-  newline { "\n" | @eof }
-  space { " " }
+  newlineOrSemicolon { "\n" | ";" }
+  eof { @eof }
+  space { " " | "\t" }
   leftParen { "(" }
   rightParen { ")" }
   ":"
@@ -37,7 +43,7 @@ line {
   FunctionCall | 
   FunctionCallOrIdentifier |
   FunctionDef |
-  Assignment |
+  Assign |
   expressionWithoutIdentifier
 }
 
@@ -76,18 +82,18 @@ FunctionDef {
 }
 
 singleLineFunctionDef {
-  "fn" Params ":" expression "end"
+  "fn" Params ":" expression
 }
 
 multiLineFunctionDef {
-  "fn" Params ":" newline (expression newline)* "end"
+  "fn" Params ":" newlineOrSemicolon (expression newlineOrSemicolon)* "end"
 }
 
 Params {
   Identifier*
 }
 
-Assignment {
+Assign {
   Identifier "=" line
 }
 

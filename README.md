@@ -13,15 +13,9 @@ Shrimp is a shell-like scripting language that combines the simplicity of comman
 - **Unbound symbols become strings** - `echo hello` treats `hello` as a string if not defined
 - **Simplicity over cleverness** - Each feature should work one way, consistently. Two simple features that are easy to explain beat one complex feature that requires lots of explanation
 
-## Current Status & Goals
-
-### Today's Implementation Goals
-1. ✅ **Interpreter Setup** - Renamed evaluator to interpreter for clarity
-2. **Command Execution** - Support calling external commands and built-in functions
-3. **Variable Assignment** - Implement assignment with validation using Lezer context tracking
-
 ### Parser Features
-- ✅ Distinguishes between identifiers (assignable) and words (non-assignable)
+
+- ✅ Distinguishes between identifiers (assignable) and words e(non-assignable)
 - ✅ Smart tokenization for named args (`lines=30` splits, but `./path=value` stays together)
 - ✅ Handles ambiguous cases (bare identifier could be function call or variable reference)
 
@@ -30,6 +24,7 @@ Shrimp is a shell-like scripting language that combines the simplicity of comman
 See `src/parser/example.shrimp` for language examples and `src/parser/shrimp.grammar` for the full grammar.
 
 ### Key Token Types
+
 - **Identifier** - Lowercase/emoji start, can contain dashes/numbers (assignable)
 - **Word** - Any non-whitespace that isn't a valid identifier (paths, URLs, etc.)
 - **FunctionCall** - Identifier followed by arguments
