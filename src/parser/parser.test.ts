@@ -350,13 +350,50 @@ describe('Assign', () => {
 })
 
 describe('multiline', () => {
-  test.only('parses multiline strings', () => {
+  test('parses multiline strings', () => {
     expect(`'first'\n'second'`).toMatchTree(`
       String first
       String second`)
   })
 
-  test('trims leading and trailing whitespace in expected tree', () => {
+  test('parses multiline functions', () => {
+    expect(`
+      add = fn a b:
+        result = a + b
+        result
+      end
+
+      add 3 4
+    `).toMatchTree(`
+      Assign
+        Identifier add
+        = =
+        FunctionDef
+          fn fn
+          Params
+            Identifier a
+            Identifier b
+          : :
+          Assign
+            Identifier result
+            = =
+            BinOp
+              Identifier a
+              operator +
+              Identifier b
+          FunctionCallOrIdentifier
+            Identifier result
+
+          end end
+      FunctionCall
+        Identifier add
+        PositionalArg
+          Number 3
+        PositionalArg
+          Number 4`)
+  })
+
+  test('ignores leading and trailing whitespace in expected tree', () => {
     expect(`
       3
 
@@ -374,7 +411,8 @@ end
           Identifier x
           Identifier y
         : :
-        Identifier x
+        FunctionCallOrIdentifier
+          Identifier x
         end end
     `)
   })

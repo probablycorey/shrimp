@@ -43,7 +43,6 @@ const singleLineFilter = EditorState.transactionFilter.of((transaction) => {
   if (multilineMode) return transaction // Allow everything in multiline mode
 
   transaction.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-    console.log(`🌭`, { string: inserted.toString(), newline: inserted.toString().includes('\n') })
     if (inserted.toString().includes('\n')) {
       multilineMode = true
       updateStatusMessage()

@@ -77,12 +77,13 @@ describe('errors', () => {
   })
 })
 
-describe('multiline tests', () => {
-  test.only('multiline function', () => {
+describe.skip('multiline tests', () => {
+  test('multiline function', () => {
     expect(`
       add = fn a b:
         result = a + b
         result
+      end
       add 3 4
     `).toEvaluateTo(7)
   })

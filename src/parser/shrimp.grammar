@@ -86,7 +86,7 @@ singleLineFunctionDef {
 }
 
 multilineFunctionDef {
-  "fn" Params ":" newlineOrSemicolon (expression newlineOrSemicolon)* "end"
+  "fn" Params ":" newlineOrSemicolon (line newlineOrSemicolon)* "end"
 }
 
 Params {
