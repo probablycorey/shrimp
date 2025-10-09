@@ -7,8 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "pretest": "bun generate-parser",
-    "serve": "bun --hot src/server/server.tsx",
+    "dev": "bun generate-parser && bun --hot src/server/server.tsx",
     "generate-parser": "lezer-generator src/parser/shrimp.grammar --typeScript -o src/parser/shrimp.ts"
   },
   "dependencies": {

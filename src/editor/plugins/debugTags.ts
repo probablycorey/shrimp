@@ -1,5 +1,6 @@
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
+import { statusBarSignal } from '#editor/editor'
 
 export const debugTags = ViewPlugin.fromClass(
   class {
@@ -10,7 +11,7 @@ export const debugTags = ViewPlugin.fromClass(
     }
 
     updateStatusBar(view: EditorView) {
-      const pos = view.state.selection.main.head
+      const pos = view.state.selection.main.head + 1
       const tree = syntaxTree(view.state)
 
       let tags: string[] = []
@@ -23,10 +24,12 @@ export const debugTags = ViewPlugin.fromClass(
       }
 
       const debugText = tags.length ? tags.reverse().slice(1).join(' > ') : 'No nodes'
-      const statusBar = document.querySelector('#status-bar')
-      if (statusBar) {
-        statusBar.textContent = debugText
-      }
+      statusBarSignal.emit({
+        side: 'right',
+        message: debugText,
+        className: 'debug-tags',
+        order: -1,
+      })
     }
   }
 )

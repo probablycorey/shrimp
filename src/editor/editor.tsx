@@ -4,26 +4,14 @@ import { shrimpTheme } from '#editor/plugins/theme'
 import { shrimpLanguage } from '#/editor/plugins/shrimpLanguage'
 import { shrimpHighlighting } from '#editor/plugins/theme'
 import { shrimpKeymap } from '#editor/plugins/keymap'
-import { log } from '#utils/utils'
+import { log, toElement } from '#utils/utils'
 import { Signal } from '#utils/signal'
 import { shrimpErrors } from '#editor/plugins/errors'
-import { ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { debugTags } from '#editor/plugins/debugTags'
+import { getContent, persistencePlugin } from '#editor/plugins/persistence'
 
-export const outputSignal = new Signal<{ output: string } | { error: string }>()
-outputSignal.connect((output) => {
-  const outputEl = document.querySelector('#output')
-  if (!outputEl) {
-    log.error('Output element not found')
-    return
-  }
-
-  if ('error' in output) {
-    outputEl.innerHTML = `<div class="error">${output.error}</div>`
-  } else {
-    outputEl.textContent = output.output
-  }
-})
+import '#editor/editor.css'
+import type { HtmlEscapedString } from 'hono/utils/html'
 
 export const Editor = () => {
   return (
@@ -41,44 +29,78 @@ export const Editor = () => {
               shrimpLanguage,
               shrimpHighlighting,
               shrimpErrors,
-              debugTags,
               persistencePlugin,
+              debugTags,
             ],
           })
 
           requestAnimationFrame(() => view.focus())
         }}
       />
-      <div id="status-bar"></div>
+      <div id="status-bar">
+        <div className="left"></div>
+        <div className="right"></div>
+      </div>
       <div id="output"></div>
+      <div id="error"></div>
     </>
   )
 }
 
-const persistencePlugin = ViewPlugin.fromClass(
-  class {
-    saveTimeout?: ReturnType<typeof setTimeout>
+export const outputSignal = new Signal<{ output: string } | { error: string }>()
 
-    update(update: ViewUpdate) {
-      if (update.docChanged) {
-        if (this.saveTimeout) clearTimeout(this.saveTimeout)
+let outputTimeout: ReturnType<typeof setTimeout>
 
-        this.saveTimeout = setTimeout(() => {
-          setContent(update.state.doc.toString())
-        }, 1000)
-      }
-    }
-
-    destroy() {
-      if (this.saveTimeout) clearTimeout(this.saveTimeout)
-    }
+outputSignal.connect((output) => {
+  const el = document.querySelector('#output')!
+  el.textContent = ''
+  let content
+  if ('error' in output) {
+    el.classList.add('error')
+    content = output.error
+  } else {
+    el.classList.remove('error')
+    content = output.output
   }
-)
 
-const getContent = () => {
-  return localStorage.getItem('shrimp-editor-content') || ''
-}
+  clearInterval(outputTimeout)
+  const totalTime = 100
+  const speed = totalTime / content.length
+  let i = 0
+  outputTimeout = setInterval(() => {
+    el.textContent += content[i]
+    i++
+    if (i >= content.length) clearInterval(outputTimeout)
+  }, speed)
+})
 
-const setContent = (data: string) => {
-  localStorage.setItem('shrimp-editor-content', data)
+type StatusBarMessage = {
+  side: 'left' | 'right'
+  message: string | Promise<HtmlEscapedString>
+  className: string
+  order?: number
 }
+export const statusBarSignal = new Signal<StatusBarMessage>()
+statusBarSignal.connect(async ({ side, message, className, order }) => {
+  document.querySelector(`#status-bar .${className}`)?.remove()
+
+  const sideEl = document.querySelector(`#status-bar .${side}`)!
+  const messageEl = (
+    <div data-order={order ?? 0} className={className}>
+      {await message}
+    </div>
+  )
+
+  // Now go through the nodes and put it in the right spot based on order. Higher number means further right
+  const nodes = Array.from(sideEl.childNodes)
+  const index = nodes.findIndex((node) => {
+    if (!(node instanceof HTMLElement)) return false
+    return Number(node.dataset.order) > (order ?? 0)
+  })
+
+  if (index === -1) {
+    sideEl.appendChild(toElement(messageEl))
+  } else {
+    sideEl.insertBefore(toElement(messageEl), nodes[index]!)
+  }
+})

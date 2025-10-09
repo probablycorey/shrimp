@@ -1,4 +1,4 @@
-@external propSource highlighting from "./highlight.js"
+@external propSource highlighting from "./highlight"
 
 @skip { space }
 
@@ -15,7 +15,7 @@ statement {
   NamedArgPrefix { $[a-z]+ "=" }
   Number { "-"? $[0-9]+ ('.' $[0-9]+)? }
   Boolean { "true" | "false" }
-  String { '\'' !["]* '\'' }
+  String { '\'' ![']* '\'' }
   newlineOrSemicolon { "\n" | ";" }
   eof { @eof }
   space { " " | "\t" }
@@ -31,7 +31,7 @@ statement {
   "/"[@name=operator]  
 }
 
-@external tokens tokenizer from "./tokenizers" { Identifier, Word }
+@external tokens tokenizer from "./tokenizer" { Identifier, Word }
 
 @precedence {   
   multiplicative @left,
@@ -78,14 +78,14 @@ NamedArg {
 }
 
 FunctionDef {
-  singleLineFunctionDef | multiLineFunctionDef
+  singleLineFunctionDef | multilineFunctionDef
 }
 
 singleLineFunctionDef {
   "fn" Params ":" expression
 }
 
-multiLineFunctionDef {
+multilineFunctionDef {
   "fn" Params ":" newlineOrSemicolon (expression newlineOrSemicolon)* "end"
 }
 

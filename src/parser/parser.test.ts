@@ -349,7 +349,13 @@ describe('Assign', () => {
   })
 })
 
-describe('whitespace', () => {
+describe('multiline', () => {
+  test.only('parses multiline strings', () => {
+    expect(`'first'\n'second'`).toMatchTree(`
+      String first
+      String second`)
+  })
+
   test('trims leading and trailing whitespace in expected tree', () => {
     expect(`
       3

@@ -10,7 +10,7 @@ const regenerateParser = async () => {
   let generate = true
   try {
     const grammarStat = await Bun.file('./src/parser/shrimp.grammar').stat()
-    const tokenizerStat = await Bun.file('./src/parser/tokenizers.ts').stat()
+    const tokenizerStat = await Bun.file('./src/parser/tokenizer.ts').stat()
     const parserStat = await Bun.file('./src/parser/shrimp.ts').stat()
 
     if (grammarStat.mtime <= parserStat.mtime && tokenizerStat.mtime <= parserStat.mtime) {

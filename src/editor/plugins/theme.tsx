@@ -36,7 +36,6 @@ export const shrimpTheme = EditorView.theme(
       fontFamily: '"Pixeloid Mono", "Courier New", monospace',
       caretColor: '#80A4C2', // soft blue caret
       padding: '0px',
-      minHeight: '100px',
     },
     '.cm-activeLine': {
       backgroundColor: 'transparent',
