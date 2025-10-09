@@ -72,11 +72,6 @@ export class Compiler {
         return [`TRY_LOAD ${value}`]
       }
 
-      // For now, just treat them all like identifiers
-      case terms.FunctionCallOrIdentifier: {
-        return [`TRY_LOAD ${value}`]
-      }
-
       case terms.BinOp: {
         const { left, op, right } = getBinaryParts(node)
         const instructions: string[] = []
@@ -136,6 +131,12 @@ export class Compiler {
         bodyInstructions.push(...this.#compileNode(bodyNode, input))
 
         return instructions
+      }
+
+      case terms.FunctionCallOrIdentifier: {
+        // For now, just treat them all like identifiers, but we might
+        // need something like TRY_CALL in the future.
+        return [`TRY_LOAD ${value}`]
       }
 
       /*

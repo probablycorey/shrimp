@@ -69,6 +69,10 @@ describe('compiler', () => {
   test('function call', () => {
     expect(`add = fn a b: a + b; add 2 9`).toEvaluateTo(11)
   })
+
+  test('function call with no args', () => {
+    expect(`bloop = fn: 'bloop'; bloop`).toEvaluateTo('bloop')
+  })
 })
 
 describe('errors', () => {
