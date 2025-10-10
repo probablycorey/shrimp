@@ -2,12 +2,7 @@
 
 @skip { space }
 
-@top Program { (statement | newlineOrSemicolon)+ eof?}
-
-statement { 
-  line newlineOrSemicolon |
-  line eof
-}
+@top Program { item* }
 
 @tokens {
   @precedence { Number "-" }
@@ -21,10 +16,20 @@ statement {
   space { " " | "\t" }
   leftParen { "(" }
   rightParen { ")" }
-  ":"
-  "fn"
-  "end"
-  "="
+  colon[closedBy="end", @name="colon"] { ":" }
+  end[openedBy="colon",  @name="end"] { "end" }
+  "fn" [@name=keyword]
+  "if" [@name=keyword]
+  "elsif" [@name=keyword]
+  "else" [@name=keyword]
+  "and" [@name=operator]
+  "or" [@name=operator]
+  "!=" [@name=operator]
+  "<" [@name=operator]
+  "<=" [@name=operator]
+  ">" [@name=operator]
+  ">=" [@name=operator]
+  "=" [@name=operator]
   "+"[@name=operator]
   "-"[@name=operator]
   "*"[@name=operator]
@@ -39,26 +44,28 @@ statement {
   call
 }
 
-line {
-  FunctionCall | 
-  FunctionCallOrIdentifier |
+item { 
+  consumeToTerminator newlineOrSemicolon |
+  consumeToTerminator eof |
+  newlineOrSemicolon // allow blank lines
+}
+
+
+consumeToTerminator {
+  ambiguousFunctionCall | 
+  IfExpr |
   FunctionDef |
   Assign |
+  BinOp |
   expressionWithoutIdentifier
 }
 
-expression {
-  expressionWithoutIdentifier | Identifier
-}
-
-expressionWithoutIdentifier {
-  BinOp |
-  valueWithoutIdentifier
-}
-
-
 FunctionCallOrIdentifier { 
   Identifier
+}
+
+ambiguousFunctionCall {
+  FunctionCall | FunctionCallOrIdentifier
 }
 
 FunctionCall {
@@ -70,11 +77,11 @@ arg {
 }
 
 PositionalArg {
-  value
+  expression
 }
 
 NamedArg {
-  NamedArgPrefix value
+  NamedArgPrefix expression
 }
 
 FunctionDef {
@@ -82,11 +89,46 @@ FunctionDef {
 }
 
 singleLineFunctionDef {
-  "fn" Params ":" expression
+  "fn" Params colon consumeToTerminator
 }
 
 multilineFunctionDef {
-  "fn" Params ":" newlineOrSemicolon (line newlineOrSemicolon)* "end"
+  "fn" Params colon newlineOrSemicolon block end
+}
+
+IfExpr {
+  singleLineIf | multilineIf
+}
+
+singleLineIf {
+  "if" (ConditionalOp | expression) colon ThenBlock { consumeToTerminator }
+}
+
+multilineIf {
+  "if" (ConditionalOp | expression) colon newlineOrSemicolon ThenBlock ElsifExpr* ElseExpr? end
+}
+
+ElsifExpr {
+  "elsif" (ConditionalOp | expression) colon newlineOrSemicolon ThenBlock
+}
+
+ElseExpr {
+  "else" colon newlineOrSemicolon ThenBlock
+}
+
+ThenBlock {
+  block
+}
+
+ConditionalOp {
+  expression "=" expression |
+  expression "!=" expression |
+  expression "<" expression |
+  expression "<=" expression |
+  expression ">" expression |
+  expression ">=" expression |
+  expression "and" (expression | ConditionalOp) |
+  expression "or" (expression | ConditionalOp)
 }
 
 Params {
@@ -94,24 +136,36 @@ Params {
 }
 
 Assign {
-  Identifier "=" line
+  Identifier "=" consumeToTerminator
 }
 
 BinOp {
-  expression !multiplicative "*" expression |
-  expression !multiplicative "/" expression |
-  expression !additive "+" expression |
-  expression !additive "-" expression
+  (expression | BinOp) !multiplicative "*" (expression | BinOp) |
+  (expression | BinOp) !multiplicative "/" (expression | BinOp) |
+  (expression | BinOp) !additive "+" (expression | BinOp) |
+  (expression | BinOp) !additive "-" (expression | BinOp)
 }
 
 ParenExpr {
-  leftParen (expressionWithoutIdentifier | FunctionCall | FunctionCallOrIdentifier) rightParen
+  leftParen (ambiguousFunctionCall | BinOp | expressionWithoutIdentifier | ConditionalOp ) rightParen
 }
 
-value {
-  valueWithoutIdentifier | Identifier
+expression {
+  expressionWithoutIdentifier | Identifier
 }
 
-valueWithoutIdentifier {
+// We need expressionWithoutIdentifier to avoid conflicts in consumeToTerminator.
+// Without this, when parsing "my-var" at statement level, the parser can't decide:
+//   - ambiguousFunctionCall → FunctionCallOrIdentifier → Identifier
+//   - expression → Identifier  
+// Both want the same Identifier token! So we use expressionWithoutIdentifier
+// to remove Identifier from the second path, forcing standalone identifiers
+// to go through ambiguousFunctionCall (which is what we want semantically).
+// Yes, it is annoying and I gave up trying to use GLR to fix it.
+expressionWithoutIdentifier {
   ParenExpr | Word | String | Number | Boolean
+}
+
+block {
+  (consumeToTerminator newlineOrSemicolon)*
 }

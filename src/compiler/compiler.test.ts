@@ -63,7 +63,7 @@ describe('compiler', () => {
   })
 
   test('function', () => {
-    expect(`add = fn a b: a + b; add`).toEvaluateTo(Function)
+    expect(`fn a b: a + b`).toEvaluateTo(Function)
   })
 
   test('function call', () => {
@@ -72,6 +72,61 @@ describe('compiler', () => {
 
   test('function call with no args', () => {
     expect(`bloop = fn: 'bloop'; bloop`).toEvaluateTo('bloop')
+  })
+
+  test('simple conditionals', () => {
+    expect(`(3 < 6)`).toEvaluateTo(true)
+    expect(`(10 > 20)`).toEvaluateTo(false)
+    expect(`(4 <= 9)`).toEvaluateTo(true)
+    expect(`(15 >= 20)`).toEvaluateTo(false)
+    expect(`(7 = 7)`).toEvaluateTo(true)
+    expect(`(5 != 5)`).toEvaluateTo(false)
+    expect(`('shave' and 'haircut')`).toEvaluateTo('haircut')
+    expect(`(false and witness)`).toEvaluateTo(false)
+    expect(`('pride' or 'prejudice')`).toEvaluateTo('pride')
+    expect(`(false or false)`).toEvaluateTo(false)
+  })
+
+  test('if', () => {
+    expect(`if 3 < 9:
+      shire
+    end`).toEvaluateTo('shire')
+  })
+
+  test('if else', () => {
+    expect(`if false:
+      grey
+    else:
+      white
+    end`).toEvaluateTo('white')
+  })
+
+  test('if elsif', () => {
+    expect(`if false:
+      boromir
+    elsif true:
+      frodo
+    end`).toEvaluateTo('frodo')
+  })
+
+  test('if elsif else', () => {
+    expect(`if false:
+      destroyed
+    elsif true:
+      fire
+    else:
+      darkness
+    end`).toEvaluateTo('fire')
+
+    expect(`if false:
+      king
+    elsif false:
+      elf
+    elsif true:
+      dwarf
+    else:
+      scattered
+    end`).toEvaluateTo('dwarf')
   })
 })
 

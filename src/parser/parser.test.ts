@@ -2,6 +2,7 @@ import { expect, describe, test } from 'bun:test'
 import { afterEach } from 'bun:test'
 import { resetCommandSource, setCommandSource } from '#editor/commands'
 import { beforeEach } from 'bun:test'
+
 import './shrimp.grammar' // Importing this so changes cause it to retest!
 
 describe('calling functions', () => {
@@ -81,13 +82,61 @@ describe('Identifier', () => {
 })
 
 describe('Parentheses', () => {
-  test('parses expressions with parentheses correctly', () => {
+  test('allows binOps with parentheses correctly', () => {
     expect('(2 + 3)').toMatchTree(`
       ParenExpr
         BinOp
           Number 2
           operator +
           Number 3`)
+  })
+
+  test('allows numbers, strings, and booleans with parentheses correctly', () => {
+    expect('(42)').toMatchTree(`
+      ParenExpr
+        Number 42`)
+
+    expect("('hello')").toMatchTree(`
+      ParenExpr
+        String hello`)
+
+    expect('(true)').toMatchTree(`
+      ParenExpr
+        Boolean true`)
+
+    expect('(false)').toMatchTree(`
+      ParenExpr
+        Boolean false`)
+  })
+
+  test('allows function calls in parens', () => {
+    expect('(echo 3)').toMatchTree(`
+      ParenExpr
+        FunctionCall
+          Identifier echo
+          PositionalArg
+            Number 3`)
+
+    expect('(echo)').toMatchTree(`
+      ParenExpr
+        FunctionCallOrIdentifier
+          Identifier echo`)
+  })
+
+  test('allows conditionals in parens', () => {
+    expect('(a > b)').toMatchTree(`
+      ParenExpr
+        ConditionalOp
+          Identifier a
+          operator >
+          Identifier b`)
+
+    expect('(a and b)').toMatchTree(`
+      ParenExpr
+        ConditionalOp
+          Identifier a
+          operator and
+          Identifier b`)
   })
 
   test('allows parens in function calls', () => {
@@ -198,19 +247,19 @@ describe('Fn', () => {
   test('parses function no parameters', () => {
     expect('fn: 1').toMatchTree(`
       FunctionDef
-        fn fn
+        keyword fn
         Params 
-        : :
+        colon :
         Number 1`)
   })
 
   test('parses function with single parameter', () => {
     expect('fn x: x + 1').toMatchTree(`
       FunctionDef
-        fn fn
+        keyword fn
         Params
           Identifier x
-        : :
+        colon :
         BinOp
           Identifier x
           operator +
@@ -220,11 +269,11 @@ describe('Fn', () => {
   test('parses function with multiple parameters', () => {
     expect('fn x y: x * y').toMatchTree(`
       FunctionDef
-        fn fn
+        keyword fn
         Params
           Identifier x
           Identifier y
-        : :
+        colon :
         BinOp
           Identifier x
           operator *
@@ -237,11 +286,11 @@ describe('Fn', () => {
   x + 9
 end`).toMatchTree(`
       FunctionDef
-        fn fn
+        keyword fn
         Params
           Identifier x
           Identifier y
-        : :
+        colon :
         BinOp
           Identifier x
           operator *
@@ -280,11 +329,11 @@ describe('newlines', () => {
 y = 2`).toMatchTree(`
       Assign
         Identifier x
-        = =
+        operator =
         Number 5
       Assign
         Identifier y
-        = =
+        operator =
         Number 2`)
   })
 
@@ -292,11 +341,11 @@ y = 2`).toMatchTree(`
     expect(`x = 5; y = 2`).toMatchTree(`
       Assign
         Identifier x
-        = =
+        operator =
         Number 5
       Assign
         Identifier y
-        = =
+        operator =
         Number 2`)
   })
 
@@ -304,7 +353,7 @@ y = 2`).toMatchTree(`
     expect(`a = hello; 2`).toMatchTree(`
       Assign
         Identifier a
-        = =
+        operator =
         FunctionCallOrIdentifier
           Identifier hello
       Number 2`)
@@ -316,7 +365,7 @@ describe('Assign', () => {
     expect('x = 5').toMatchTree(`
       Assign
         Identifier x
-        = =
+        operator =
         Number 5`)
   })
 
@@ -324,7 +373,7 @@ describe('Assign', () => {
     expect('x = 5 + 3').toMatchTree(`
       Assign
         Identifier x
-        = =
+        operator =
         BinOp
           Number 5
           operator +
@@ -335,17 +384,152 @@ describe('Assign', () => {
     expect('add = fn a b: a + b').toMatchTree(`
       Assign
         Identifier add
-        = =
+        operator =
         FunctionDef
-          fn fn
+          keyword fn
           Params
             Identifier a
             Identifier b
-          : :
+          colon :
           BinOp
             Identifier a
             operator +
             Identifier b`)
+  })
+})
+
+describe('if/elsif/else', () => {
+  test('parses single line if', () => {
+    expect(`if y = 1: 'cool'`).toMatchTree(`
+      IfExpr
+        keyword if
+        ConditionalOp
+          Identifier y
+          operator =
+          Number 1
+        colon :
+        ThenBlock
+          String cool
+    `)
+
+    expect('a = if x: 2').toMatchTree(`
+      Assign
+        Identifier a
+        operator =
+        IfExpr
+          keyword if
+          Identifier x
+          colon :
+          ThenBlock
+            Number 2
+    `)
+  })
+
+  test('parses multiline if', () => {
+    expect(`
+    if x < 9:
+      yes
+    end`).toMatchTree(`
+      IfExpr
+        keyword if
+        ConditionalOp
+          Identifier x
+          operator <
+          Number 9
+        colon :
+        ThenBlock
+          FunctionCallOrIdentifier
+            Identifier yes
+        end end
+    `)
+  })
+
+  test('parses multiline if with else', () => {
+    expect(`if with-else:
+      x
+    else:
+      y
+    end`).toMatchTree(`
+      IfExpr
+        keyword if
+        Identifier with-else
+        colon :
+        ThenBlock
+          FunctionCallOrIdentifier
+            Identifier x
+        ElseExpr
+          keyword else
+          colon :
+          ThenBlock
+            FunctionCallOrIdentifier
+              Identifier y
+        end end
+    `)
+  })
+
+  test('parses multiline if with elsif', () => {
+    expect(`if with-elsif:
+      x
+    elsif another-condition:
+      y
+    end`).toMatchTree(`
+      IfExpr
+        keyword if
+        Identifier with-elsif
+        colon :
+        ThenBlock
+          FunctionCallOrIdentifier
+            Identifier x
+        ElsifExpr
+          keyword elsif
+          Identifier another-condition
+          colon :
+          ThenBlock
+            FunctionCallOrIdentifier
+              Identifier y
+        end end
+    `)
+  })
+
+  test('parses multiline if with multiple elsif and else', () => {
+    expect(`if with-elsif-else:
+      x
+    elsif another-condition:
+      y
+    elsif yet-another-condition:
+      z
+    else:
+      oh-no
+    end`).toMatchTree(`
+      IfExpr
+        keyword if
+        Identifier with-elsif-else
+        colon :
+        ThenBlock
+          FunctionCallOrIdentifier
+            Identifier x
+        ElsifExpr
+          keyword elsif
+          Identifier another-condition
+          colon :
+          ThenBlock
+            FunctionCallOrIdentifier
+              Identifier y
+        ElsifExpr
+          keyword elsif
+          Identifier yet-another-condition
+          colon :
+          ThenBlock
+            FunctionCallOrIdentifier
+              Identifier z
+        ElseExpr
+          keyword else
+          colon :
+          ThenBlock
+            FunctionCallOrIdentifier
+              Identifier oh-no
+        end end
+    `)
   })
 })
 
@@ -367,16 +551,16 @@ describe('multiline', () => {
     `).toMatchTree(`
       Assign
         Identifier add
-        = =
+        operator =
         FunctionDef
-          fn fn
+          keyword fn
           Params
             Identifier a
             Identifier b
-          : :
+          colon :
           Assign
             Identifier result
-            = =
+            operator =
             BinOp
               Identifier a
               operator +
@@ -406,11 +590,11 @@ end
       Number 3
 
       FunctionDef
-        fn fn
+        keyword fn
         Params
           Identifier x
           Identifier y
-        : :
+        colon :
         FunctionCallOrIdentifier
           Identifier x
         end end

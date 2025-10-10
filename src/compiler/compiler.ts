@@ -4,12 +4,21 @@ import * as terms from '#parser/shrimp.terms'
 import type { SyntaxNode, Tree } from '@lezer/common'
 import { assert, errorMessage } from '#utils/utils'
 import { toBytecode, type Bytecode } from 'reefvm'
-import { compile } from 'tailwindcss'
+import {
+  checkTreeForErrors,
+  getAllChildren,
+  getAssignmentParts,
+  getBinaryParts,
+  getFunctionCallParts,
+  getFunctionDefParts,
+  getIfExprParts,
+  getNamedArgParts,
+} from '#compiler/utils'
 
 export class Compiler {
-  fnCounter = 0
   instructions: string[] = []
-  labels = new Map<string, string[]>()
+  fnLabels = new Map<string, string[]>()
+  ifLabelCount = 0
   bytecode: Bytecode
 
   constructor(public input: string) {
@@ -24,17 +33,17 @@ export class Compiler {
       this.#compileCst(cst, input)
 
       // Add the labels
-      for (const [label, labelInstructions] of this.labels) {
+      for (const [label, labelInstructions] of this.fnLabels) {
         this.instructions.push(`${label}:`)
         this.instructions.push(...labelInstructions.map((instr) => `  ${instr}`))
         this.instructions.push('  RETURN')
       }
 
-      // console.log(`🌭`, this.instructions.join('\n'))
+      // console.log(`\n🤖 instructions:\n----------------\n${this.instructions.join('\n')}\n\n`)
       this.bytecode = toBytecode(this.instructions.join('\n'))
     } catch (error) {
       if (error instanceof CompilerError) {
-        throw new Error(`Compiler Error:\n${error.toReadableString(input)}`)
+        throw new Error(error.toReadableString(input))
       } else {
         throw new Error(`Unknown error during compilation:\n${errorMessage(error)}`)
       }
@@ -119,13 +128,13 @@ export class Compiler {
       case terms.FunctionDef: {
         const { paramNames, bodyNode } = getFunctionDefParts(node, input)
         const instructions: string[] = []
-        const functionName = `.func_${this.labels.size}`
+        const functionName = `.func_${this.fnLabels.size}`
         const bodyInstructions: string[] = []
-        if (this.labels.has(functionName)) {
+        if (this.fnLabels.has(functionName)) {
           throw new CompilerError(`Function name collision: ${functionName}`, node.from, node.to)
         }
 
-        this.labels.set(functionName, bodyInstructions)
+        this.fnLabels.set(functionName, bodyInstructions)
 
         instructions.push(`MAKE_FUNCTION (${paramNames}) ${functionName}`)
         bodyInstructions.push(...this.#compileNode(bodyNode, input))
@@ -134,9 +143,7 @@ export class Compiler {
       }
 
       case terms.FunctionCallOrIdentifier: {
-        // For now, just treat them all like identifiers, but we might
-        // need something like TRY_CALL in the future.
-        return [`TRY_LOAD ${value}`]
+        return [`TRY_CALL ${value}`]
       }
 
       /*
@@ -173,126 +180,112 @@ export class Compiler {
         return instructions
       }
 
+      case terms.ThenBlock: {
+        const instructions = getAllChildren(node)
+          .map((child) => this.#compileNode(child, input))
+          .flat()
+
+        return instructions
+      }
+
+      case terms.IfExpr: {
+        const { conditionNode, thenBlock, elseIfBlocks, elseThenBlock } = getIfExprParts(
+          node,
+          input
+        )
+        const instructions: string[] = []
+        instructions.push(...this.#compileNode(conditionNode, input))
+        this.ifLabelCount++
+        const elseLabel = `.else_${this.ifLabelCount}`
+        const endLabel = `.end_${this.ifLabelCount}`
+
+        const thenBlockInstructions = this.#compileNode(thenBlock, input)
+        instructions.push(`JUMP_IF_FALSE #${thenBlockInstructions.length + 1}`)
+        instructions.push(...thenBlockInstructions)
+        instructions.push(`JUMP ${endLabel}`)
+
+        // Else if
+        elseIfBlocks.forEach(({ conditional, thenBlock }, index) => {
+          instructions.push(...this.#compileNode(conditional, input))
+          const elseIfInstructions = this.#compileNode(thenBlock, input)
+          instructions.push(`JUMP_IF_FALSE #${elseIfInstructions.length + 1}`)
+          instructions.push(...elseIfInstructions)
+          instructions.push(`JUMP ${endLabel}`)
+        })
+
+        // Else
+        instructions.push(`${elseLabel}:`)
+        if (elseThenBlock) {
+          const elseThenInstructions = this.#compileNode(elseThenBlock, input).map((i) => `  ${i}`)
+          instructions.push(...elseThenInstructions)
+        } else {
+          instructions.push(`  PUSH null`)
+        }
+
+        instructions.push(`${endLabel}:`)
+
+        return instructions
+      }
+
+      // - `EQ`, `NEQ`, `LT`, `GT`, `LTE`, `GTE` - Pop 2, push boolean
+      case terms.ConditionalOp: {
+        const instructions: string[] = []
+        const { left, op, right } = getBinaryParts(node)
+        const leftInstructions: string[] = this.#compileNode(left, input)
+        const rightInstructions: string[] = this.#compileNode(right, input)
+
+        const opValue = input.slice(op.from, op.to)
+        switch (opValue) {
+          case '=':
+            instructions.push(...leftInstructions, ...rightInstructions, 'EQ')
+            break
+
+          case '!=':
+            instructions.push(...leftInstructions, ...rightInstructions, 'NEQ')
+            break
+
+          case '<':
+            instructions.push(...leftInstructions, ...rightInstructions, 'LT')
+            break
+
+          case '>':
+            instructions.push(...leftInstructions, ...rightInstructions, 'GT')
+            break
+
+          case '<=':
+            instructions.push(...leftInstructions, ...rightInstructions, 'LTE')
+            break
+
+          case '>=':
+            instructions.push(...leftInstructions, ...rightInstructions, 'GTE')
+            break
+
+          case 'and':
+            instructions.push(...leftInstructions)
+            instructions.push('DUP')
+            instructions.push(`JUMP_IF_FALSE #${rightInstructions.length + 1}`)
+            instructions.push('POP')
+            instructions.push(...rightInstructions)
+            break
+
+          case 'or':
+            instructions.push(...leftInstructions)
+            instructions.push('PUSH 9')
+            instructions.push(`JUMP_IF_TRUE #${rightInstructions.length + 1}`)
+            instructions.push('POP')
+            instructions.push(...rightInstructions)
+
+            break
+
+          default:
+            throw new CompilerError(`Unsupported conditional operator: ${opValue}`, op.from, op.to)
+        }
+
+        return instructions
+      }
+
       default:
         throw new CompilerError(`Unsupported syntax node: ${node.type.name}`, node.from, node.to)
     }
   }
-}
-
-// Helper functions for extracting node parts
-const getAllChildren = (node: SyntaxNode): SyntaxNode[] => {
-  const children: SyntaxNode[] = []
-  let child = node.firstChild
-  while (child) {
-    children.push(child)
-    child = child.nextSibling
-  }
-  return children
-}
-
-const getBinaryParts = (node: SyntaxNode) => {
-  const children = getAllChildren(node)
-  const [left, op, right] = children
-
-  if (!left || !op || !right) {
-    throw new CompilerError(`BinOp expected 3 children, got ${children.length}`, node.from, node.to)
-  }
-
-  return { left, op, right }
-}
-
-const getAssignmentParts = (node: SyntaxNode) => {
-  const children = getAllChildren(node)
-  const [left, equals, right] = children
-
-  if (!left || left.type.id !== terms.Identifier) {
-    throw new CompilerError(
-      `Assign left child must be an Identifier, got ${left ? left.type.name : 'none'}`,
-      node.from,
-      node.to
-    )
-  } else if (!equals || !right) {
-    throw new CompilerError(
-      `Assign expected 3 children, got ${children.length}`,
-      node.from,
-      node.to
-    )
-  }
-
-  return { identifier: left, right }
-}
-
-const checkTreeForErrors = (tree: Tree, input: string): string[] => {
-  const errors: string[] = []
-  tree.iterate({
-    enter: (node) => {
-      if (node.type.isError) {
-        const errorText = input.slice(node.from, node.to)
-        errors.push(`Syntax error at ${node.from}-${node.to}: "${errorText}"`)
-      }
-    },
-  })
-
-  return errors
-}
-
-const getFunctionDefParts = (node: SyntaxNode, input: string) => {
-  const children = getAllChildren(node)
-  const [fnKeyword, paramsNode, colon, bodyNode] = children
-
-  if (!fnKeyword || !paramsNode || !colon || !bodyNode) {
-    throw new CompilerError(
-      `FunctionDef expected 5 children, got ${children.length}`,
-      node.from,
-      node.to
-    )
-  }
-
-  const paramNames = getAllChildren(paramsNode)
-    .map((param) => {
-      if (param.type.id !== terms.Identifier) {
-        throw new CompilerError(
-          `FunctionDef params must be Identifiers, got ${param.type.name}`,
-          param.from,
-          param.to
-        )
-      }
-      return input.slice(param.from, param.to)
-    })
-    .join(' ')
-
-  return { paramNames, bodyNode }
-}
-
-const getFunctionCallParts = (node: SyntaxNode, input: string) => {
-  const [identifierNode, ...args] = getAllChildren(node)
-
-  if (!identifierNode) {
-    throw new CompilerError(`FunctionCall expected at least 1 child, got 0`, node.from, node.to)
-  }
-
-  const namedArgs = args.filter((arg) => arg.type.id === terms.NamedArg)
-  const positionalArgs = args
-    .filter((arg) => arg.type.id === terms.PositionalArg)
-    .map((arg) => {
-      const child = arg.firstChild
-      if (!child) throw new CompilerError(`PositionalArg has no child`, arg.from, arg.to)
-
-      return child
-    })
-
-  return { identifierNode, namedArgs, positionalArgs }
-}
-
-const getNamedArgParts = (node: SyntaxNode, input: string) => {
-  const children = getAllChildren(node)
-  const [namedArgPrefix, valueNode] = getAllChildren(node)
-
-  if (!namedArgPrefix || !valueNode) {
-    const message = `NamedArg expected 2 children, got ${children.length}`
-    throw new CompilerError(message, node.from, node.to)
-  }
-
-  const name = input.slice(namedArgPrefix.from, namedArgPrefix.to - 2) // Remove the trailing =
-  return { name, valueNode }
 }

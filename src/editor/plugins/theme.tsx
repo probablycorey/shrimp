@@ -54,6 +54,12 @@ export const shrimpTheme = EditorView.theme(
       outline: 'none',
       height: '100%',
     },
+    '.cm-matchingBracket': {
+      backgroundColor: '#FF5370',
+    },
+    '.cm-nonmatchingBracket': {
+      backgroundColor: '#C3E88D',
+    },
   },
   { dark: true }
 )
