@@ -53,7 +53,8 @@ item {
 
 
 consumeToTerminator {
-  ambiguousFunctionCall | 
+  PipeExpr |
+  ambiguousFunctionCall |
   IfExpr |
   FunctionDef |
   Assign |
@@ -61,7 +62,15 @@ consumeToTerminator {
   expressionWithoutIdentifier
 }
 
-FunctionCallOrIdentifier { 
+PipeExpr {
+  pipeOperand ("|" pipeOperand)+
+}
+
+pipeOperand {
+  FunctionCall | FunctionCallOrIdentifier
+}
+
+FunctionCallOrIdentifier {
   Identifier
 }
 
