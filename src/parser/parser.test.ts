@@ -599,6 +599,26 @@ describe('pipe expressions', () => {
               Identifier h
     `)
   })
+
+  test('pipe with inline function', () => {
+    expect('items | each fn x: x end').toMatchTree(`
+      PipeExpr
+        FunctionCallOrIdentifier
+          Identifier items
+        operator |
+        FunctionCall
+          Identifier each
+          PositionalArg
+            FunctionDef
+              keyword fn
+              Params
+                Identifier x
+              colon :
+              FunctionCallOrIdentifier
+                Identifier x
+              end end
+    `)
+  })
 })
 
 describe('multiline', () => {
