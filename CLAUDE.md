@@ -35,6 +35,31 @@ Shrimp is a shell-like scripting language that combines command-line simplicity 
 
 Key references: [Lezer System Guide](https://lezer.codemirror.net/docs/guide/) | [Lezer API](https://lezer.codemirror.net/docs/ref/)
 
+## Reading the Codebase: What to Look For
+
+When exploring Shrimp, focus on these key files in order:
+
+1. **src/parser/shrimp.grammar** - Language syntax rules
+
+   - Note the `expressionWithoutIdentifier` pattern and its comment
+   - See how `consumeToTerminator` handles statement-level parsing
+
+2. **src/parser/tokenizer.ts** - How Identifier vs Word is determined
+
+   - Check the emoji Unicode ranges and surrogate pair handling
+   - See context-aware termination logic (`;`, `)`, `:`)
+
+3. **src/compiler/compiler.ts** - CST to bytecode transformation
+
+   - See how functions become labels in `fnLabels` map
+   - Check short-circuit logic for `and`/`or` (lines 267-282)
+   - Notice `TRY_CALL` emission for bare identifiers (line 152)
+
+4. **packages/ReefVM/src/vm.ts** - Bytecode execution
+   - See `TRY_CALL` fall-through to `CALL` (lines 357-375)
+   - Check `TRY_LOAD` string coercion (lines 135-145)
+   - Notice NOSE-style named parameter binding (lines 425-443)
+
 ## Development Commands
 
 ### Running Files
@@ -141,13 +166,68 @@ function parseExpression(input: string) {
 
 **Whitespace-sensitive parsing**: Spaces distinguish operators from identifiers (`x-1` vs `x - 1`). This enables natural shell-like syntax.
 
-**Identifier vs Word tokenization**: Custom tokenizer determines if a token is an assignable identifier (lowercase/emoji start) or a non-assignable word (paths, URLs). This allows `./file.txt` without quotes.
+**Identifier vs Word tokenization**: The custom tokenizer (tokenizer.ts) is sophisticated:
 
-**Ambiguous identifier resolution**: Bare identifiers like `myVar` could be function calls or variable references. The parser creates `FunctionCallOrIdentifier` nodes, resolved at runtime.
+- **Surrogate pair handling**: Processes emoji as full Unicode code points (lines 51-65)
+- **Context-aware termination**: Stops at `;`, `)`, `:` only when followed by whitespace (lines 19-24)
+  - This allows `basename ./cool;` to parse correctly
+  - But `basename ./cool; 2` treats the semicolon as a terminator
+- **GLR state checking**: Uses `stack.canShift(Word)` to decide whether to track identifier validity
+- **Permissive Words**: Anything that's not an identifier is a Word (paths, URLs, @mentions, #hashtags)
+
+**Why this matters**: This complexity is what enables shell-like syntax. Without it, you'd need quotes around `./file.txt` or special handling for paths.
+
+**Identifier rules**: Must start with lowercase letter or emoji, can contain lowercase, digits, dashes, and emoji.
+
+**Word rules**: Everything else that isn't whitespace or a delimiter.
+
+**Ambiguous identifier resolution**: Bare identifiers like `myVar` could be function calls or variable references. The parser creates `FunctionCallOrIdentifier` nodes, resolved at runtime using the `TRY_CALL` opcode.
+
+**How it works**:
+
+- The compiler emits `TRY_CALL varname` for bare identifiers (src/compiler/compiler.ts:152)
+- ReefVM checks if the variable is a function at runtime (vm.ts:357-373)
+- If it's a function, TRY_CALL intentionally falls through to CALL opcode (no break statement)
+- If it's not a function or undefined, it pushes the value/string and returns
+- This runtime resolution enables shell-like "echo hello" without quotes
+
+**Unbound symbols become strings**: When `TRY_LOAD` encounters an undefined variable, it pushes the variable name as a string (vm.ts:135-145). This is a first-class language feature implemented as a VM opcode, not a parser trick.
 
 **Expression-oriented design**: Everything returns a value - commands, assignments, functions. This enables composition and functional patterns.
 
 **EOF handling**: The grammar uses `(statement | newlineOrSemicolon)+ eof?` to handle empty lines and end-of-file without infinite loops.
+
+## Compiler Architecture
+
+**Function compilation strategy**: The compiler doesn't create inline function objects. Instead it:
+
+1. Generates unique labels (`.func_0`, `.func_1`) for each function body (compiler.ts:137)
+2. Stores function body instructions in `fnLabels` map during compilation
+3. Appends all function bodies to the end of bytecode with RETURN instructions (compiler.ts:36-41)
+4. Emits `MAKE_FUNCTION` with parameters and label reference
+
+This approach keeps the main program linear and allows ReefVM to jump to function bodies by label.
+
+**Short-circuit logic**: ReefVM has no AND/OR opcodes. The compiler implements short-circuit evaluation using:
+
+```typescript
+// For `a and b`:
+LOAD a
+DUP                    // Duplicate so we can return it if falsy
+JUMP_IF_FALSE skip     // If false, skip evaluating b
+POP                    // Remove duplicate if we're continuing
+LOAD b                 // Evaluate right side
+skip:
+```
+
+See compiler.ts:267-282 for the full implementation. The `or` operator uses `JUMP_IF_TRUE` instead.
+
+**If/else compilation**: The compiler uses label-based jumps:
+
+- `JUMP_IF_FALSE` skips the then-block when condition is false
+- Each branch ends with `JUMP endLabel` to skip remaining branches
+- The final label marks where all branches converge
+- If there's no else branch, compiler emits `PUSH null` as the default value
 
 ## Grammar Development
 
@@ -206,6 +286,21 @@ The `toMatchTree` helper compares parser output with expected CST structure.
 
 **Empty line parsing**: The grammar structure `(statement | newlineOrSemicolon)+ eof?` allows proper empty line and EOF handling.
 
+### Why expressionWithoutIdentifier Exists
+
+The grammar has an unusual pattern: `expressionWithoutIdentifier`. This exists to solve a GLR conflict:
+
+```
+consumeToTerminator {
+  ambiguousFunctionCall |   // → FunctionCallOrIdentifier → Identifier
+  expression                 // → Identifier
+}
+```
+
+Without `expressionWithoutIdentifier`, parsing `my-var` at statement level creates two paths that both want the Identifier token. The grammar comment (shrimp.grammar lines 157-164) explains we "gave up trying to use GLR to fix it."
+
+**The solution**: Remove Identifier from the `expression` path by creating `expressionWithoutIdentifier`, forcing standalone identifiers through `ambiguousFunctionCall`. This is pragmatic over theoretical purity.
+
 ## Testing Strategy
 
 ### Parser Tests (`src/parser/parser.test.ts`)
@@ -259,3 +354,15 @@ When grammar isn't parsing correctly:
 2. **Test simpler cases first** - build up from basic to complex
 3. **Use `toMatchTree` output** - see what the parser actually produces
 4. **Check external tokenizer** - identifier vs word logic in `tokenizers.ts`
+
+## Common Misconceptions
+
+**"The parser handles unbound symbols as strings"** → False. The _VM_ does this via `TRY_LOAD` opcode. The parser creates `FunctionCallOrIdentifier` nodes; the compiler emits `TRY_LOAD`/`TRY_CALL`; the VM resolves at runtime.
+
+**"Words are just paths"** → False. Words are _anything_ that isn't an identifier. Paths, URLs, `@mentions`, `#hashtags` all parse as Words. The tokenizer accepts any non-whitespace that doesn't match identifier rules.
+
+**"Functions are first-class values"** → True, but they're compiled to labels, not inline bytecode. The VM creates closures with label references, not embedded instructions.
+
+**"The grammar is simple"** → False. It has pragmatic workarounds for GLR conflicts (`expressionWithoutIdentifier`), complex EOF handling, and relies heavily on the external tokenizer for correctness.
+
+**"Short-circuit logic is a VM feature"** → False. It's a compiler pattern using `DUP`, `JUMP_IF_FALSE/TRUE`, and `POP`. The VM has no AND/OR opcodes.

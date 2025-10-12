@@ -245,16 +245,17 @@ describe('BinOp', () => {
 
 describe('Fn', () => {
   test('parses function no parameters', () => {
-    expect('fn: 1').toMatchTree(`
+    expect('fn: 1 end').toMatchTree(`
       FunctionDef
         keyword fn
         Params 
         colon :
-        Number 1`)
+        Number 1
+        end end`)
   })
 
   test('parses function with single parameter', () => {
-    expect('fn x: x + 1').toMatchTree(`
+    expect('fn x: x + 1 end').toMatchTree(`
       FunctionDef
         keyword fn
         Params
@@ -263,11 +264,12 @@ describe('Fn', () => {
         BinOp
           Identifier x
           operator +
-          Number 1`)
+          Number 1
+        end end`)
   })
 
   test('parses function with multiple parameters', () => {
-    expect('fn x y: x * y').toMatchTree(`
+    expect('fn x y: x * y end').toMatchTree(`
       FunctionDef
         keyword fn
         Params
@@ -277,7 +279,8 @@ describe('Fn', () => {
         BinOp
           Identifier x
           operator *
-          Identifier y`)
+          Identifier y
+        end end`)
   })
 
   test('parses multiline function with multiple statements', () => {
@@ -381,7 +384,7 @@ describe('Assign', () => {
   })
 
   test('parses assignment with functions', () => {
-    expect('add = fn a b: a + b').toMatchTree(`
+    expect('add = fn a b: a + b end').toMatchTree(`
       Assign
         Identifier add
         operator =
@@ -394,7 +397,8 @@ describe('Assign', () => {
           BinOp
             Identifier a
             operator +
-            Identifier b`)
+            Identifier b
+          end end`)
   })
 })
 
