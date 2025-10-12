@@ -33,7 +33,8 @@
   "+"[@name=operator]
   "-"[@name=operator]
   "*"[@name=operator]
-  "/"[@name=operator]  
+  "/"[@name=operator]
+  "|"[@name=operator]
 }
 
 @external tokens tokenizer from "./tokenizer" { Identifier, Word }
@@ -77,11 +78,11 @@ arg {
 }
 
 PositionalArg {
-  expression
+  expression | FunctionDef
 }
 
 NamedArg {
-  NamedArgPrefix expression
+  NamedArgPrefix (expression | FunctionDef)
 }
 
 FunctionDef {
@@ -89,7 +90,7 @@ FunctionDef {
 }
 
 singleLineFunctionDef {
-  "fn" Params colon consumeToTerminator
+  "fn" Params colon consumeToTerminator end
 }
 
 multilineFunctionDef {
