@@ -581,6 +581,24 @@ describe('pipe expressions', () => {
           Identifier process
     `)
   })
+
+  test('pipe expression in assignment', () => {
+    expect('result = echo hello | grep h').toMatchTree(`
+      Assign
+        Identifier result
+        operator =
+        PipeExpr
+          FunctionCall
+            Identifier echo
+            PositionalArg
+              Identifier hello
+          operator |
+          FunctionCall
+            Identifier grep
+            PositionalArg
+              Identifier h
+    `)
+  })
 })
 
 describe('multiline', () => {
