@@ -537,6 +537,52 @@ describe('if/elsif/else', () => {
   })
 })
 
+describe('pipe expressions', () => {
+  test('simple pipe expression', () => {
+    expect('echo hello | grep h').toMatchTree(`
+      PipeExpr
+        FunctionCall
+          Identifier echo
+          PositionalArg
+            Identifier hello
+        operator |
+        FunctionCall
+          Identifier grep
+          PositionalArg
+            Identifier h
+    `)
+  })
+
+  test('multi-stage pipe chain', () => {
+    expect('find files | filter active | sort').toMatchTree(`
+      PipeExpr
+        FunctionCall
+          Identifier find
+          PositionalArg
+            Identifier files
+        operator |
+        FunctionCall
+          Identifier filter
+          PositionalArg
+            Identifier active
+        operator |
+        FunctionCallOrIdentifier
+          Identifier sort
+    `)
+  })
+
+  test('pipe with identifier', () => {
+    expect('get-value | process').toMatchTree(`
+      PipeExpr
+        FunctionCallOrIdentifier
+          Identifier get-value
+        operator |
+        FunctionCallOrIdentifier
+          Identifier process
+    `)
+  })
+})
+
 describe('multiline', () => {
   test('parses multiline strings', () => {
     expect(`'first'\n'second'`).toMatchTree(`
