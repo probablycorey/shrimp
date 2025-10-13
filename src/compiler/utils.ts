@@ -59,9 +59,9 @@ export const getAssignmentParts = (node: SyntaxNode) => {
 
 export const getFunctionDefParts = (node: SyntaxNode, input: string) => {
   const children = getAllChildren(node)
-  const [fnKeyword, paramsNode, colon, bodyNode] = children
+  const [fnKeyword, paramsNode, colon, ...bodyNodes] = children
 
-  if (!fnKeyword || !paramsNode || !colon || !bodyNode) {
+  if (!fnKeyword || !paramsNode || !colon || !bodyNodes) {
     throw new CompilerError(
       `FunctionDef expected 5 children, got ${children.length}`,
       node.from,
@@ -80,7 +80,8 @@ export const getFunctionDefParts = (node: SyntaxNode, input: string) => {
     return input.slice(param.from, param.to)
   })
 
-  return { paramNames, bodyNode }
+  const bodyWithoutEnd = bodyNodes.slice(0, -1)
+  return { paramNames, bodyNodes: bodyWithoutEnd }
 }
 
 export const getFunctionCallParts = (node: SyntaxNode, input: string) => {

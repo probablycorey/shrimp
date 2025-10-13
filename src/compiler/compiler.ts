@@ -25,6 +25,7 @@ export class Compiler {
   fnLabels = new Map<Label, ProgramItem[]>()
   ifLabelCount = 0
   bytecode: Bytecode
+  pipeCounter = 0
 
   constructor(public input: string) {
     try {
@@ -37,12 +38,6 @@ export class Compiler {
       }
 
       this.#compileCst(cst, input)
-
-      throw new CompilerError(
-        'I am a very long fake error to test scrolling and other things this is super long\nand has multiple lines\nand just keeps going and going and going',
-        20,
-        25
-      )
 
       // Add the labels
       for (const [label, labelInstructions] of this.fnLabels) {
@@ -146,7 +141,7 @@ export class Compiler {
       }
 
       case terms.FunctionDef: {
-        const { paramNames, bodyNode } = getFunctionDefParts(node, input)
+        const { paramNames, bodyNodes } = getFunctionDefParts(node, input)
         const instructions: ProgramItem[] = []
         const functionLabel: Label = `.func_${this.fnLabels.size}`
         const bodyInstructions: ProgramItem[] = []
@@ -157,7 +152,9 @@ export class Compiler {
         this.fnLabels.set(functionLabel, bodyInstructions)
 
         instructions.push(['MAKE_FUNCTION', paramNames, functionLabel])
-        bodyInstructions.push(...this.#compileNode(bodyNode, input))
+        bodyNodes.forEach((bodyNode) => {
+          bodyInstructions.push(...this.#compileNode(bodyNode, input))
+        })
 
         return instructions
       }
@@ -311,8 +308,10 @@ export class Compiler {
         const instructions: ProgramItem[] = []
         instructions.push(...this.#compileNode(pipedFunctionCall, input))
 
+        this.pipeCounter++
+        const pipeValName = `_pipe_value_${this.pipeCounter}`
         pipeReceivers.forEach((pipeReceiver) => {
-          instructions.push(['STORE', '_pipe_value'])
+          instructions.push(['STORE', pipeValName])
 
           const { identifierNode, namedArgs, positionalArgs } = getFunctionCallParts(
             pipeReceiver,
@@ -333,12 +332,12 @@ export class Compiler {
 
           // If no underscore is explicitly used, add the piped value as the first positional arg
           if (shouldPushPositionalArg) {
-            instructions.push(['LOAD', '_pipe_value'])
+            instructions.push(['LOAD', pipeValName])
           }
 
           positionalArgs.forEach((arg) => {
             if (arg.type.id === terms.Underscore) {
-              instructions.push(['LOAD', '_pipe_value'])
+              instructions.push(['LOAD', pipeValName])
             } else {
               instructions.push(...this.#compileNode(arg, input))
             }
@@ -348,7 +347,7 @@ export class Compiler {
             const { name, valueNode } = getNamedArgParts(arg, input)
             instructions.push(['PUSH', name])
             if (valueNode.type.id === terms.Underscore) {
-              instructions.push(['LOAD', '_pipe_value'])
+              instructions.push(['LOAD', pipeValName])
             } else {
               instructions.push(...this.#compileNode(valueNode, input))
             }
