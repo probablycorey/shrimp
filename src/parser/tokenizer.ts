@@ -23,6 +23,11 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
       }
     }
 
+    // Pipe character always terminates a word/identifier
+    if (ch === 124 /* | */) {
+      break
+    }
+
     // Track identifier validity
     if (!isLowercaseLetter(ch) && !isDigit(ch) && ch !== 45 && !isEmoji(ch)) {
       if (!canBeWord) break

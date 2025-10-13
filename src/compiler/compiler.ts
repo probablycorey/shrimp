@@ -288,6 +288,86 @@ export class Compiler {
         return instructions
       }
 
+      case terms.PipeExpr: {
+        const allChildren = getAllChildren(node)
+        // Filter out the pipe operator nodes (they're just syntax)
+        const operands = allChildren.filter((child) => child.type.name !== 'operator')
+        if (operands.length < 2) {
+          throw new CompilerError('PipeExpr must have at least two operands', node.from, node.to)
+        }
+
+        const instructions: ProgramItem[] = []
+
+        // Compile first operand normally
+        instructions.push(...this.#compileNode(operands[0]!, input))
+
+        // For each subsequent operand, transform it to receive piped value as first arg
+        for (let i = 1; i < operands.length; i++) {
+          const operand = operands[i]!
+
+          // Result from previous stage is on stack
+          // We need to make it the first argument to the next call
+
+          if (operand.type.id === terms.FunctionCallOrIdentifier) {
+            // Simple identifier - emit TRY_CALL with piped value as single argument
+            const identifierNode = operand.getChild('Identifier')
+            if (!identifierNode) {
+              throw new CompilerError('FunctionCallOrIdentifier must have Identifier', operand.from, operand.to)
+            }
+            const fnName = input.slice(identifierNode.from, identifierNode.to)
+
+            // Stack has: [piped_value]
+            // Store piped value temporarily
+            instructions.push(['STORE', '__pipe_value'])
+
+            // Load function
+            instructions.push(['TRY_LOAD', fnName])
+
+            // Load piped value as first arg
+            instructions.push(['LOAD', '__pipe_value'])
+
+            // Call with 1 positional arg and 0 named args
+            instructions.push(['PUSH', 1])
+            instructions.push(['PUSH', 0])
+            instructions.push(['CALL'])
+
+          } else if (operand.type.id === terms.FunctionCall) {
+            // Function call with arguments - piped value becomes first argument
+            const { identifierNode, namedArgs, positionalArgs } = getFunctionCallParts(operand, input)
+
+            // Store piped value temporarily
+            instructions.push(['STORE', '__pipe_value'])
+
+            // Load function
+            instructions.push(...this.#compileNode(identifierNode, input))
+
+            // Push piped value as first arg
+            instructions.push(['LOAD', '__pipe_value'])
+
+            // Push remaining positional args
+            positionalArgs.forEach((arg) => {
+              instructions.push(...this.#compileNode(arg, input))
+            })
+
+            // Push named args
+            namedArgs.forEach((arg) => {
+              const { name, valueNode } = getNamedArgParts(arg, input)
+              instructions.push(['PUSH', name])
+              instructions.push(...this.#compileNode(valueNode, input))
+            })
+
+            // Call with (positionalArgs + 1 for piped value) and namedArgs
+            instructions.push(['PUSH', positionalArgs.length + 1])
+            instructions.push(['PUSH', namedArgs.length])
+            instructions.push(['CALL'])
+          } else {
+            throw new CompilerError(`Unsupported pipe operand type: ${operand.type.name}`, operand.from, operand.to)
+          }
+        }
+
+        return instructions
+      }
+
       default:
         throw new CompilerError(`Unsupported syntax node: ${node.type.name}`, node.from, node.to)
     }

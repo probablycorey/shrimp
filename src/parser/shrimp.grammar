@@ -39,9 +39,10 @@
 
 @external tokens tokenizer from "./tokenizer" { Identifier, Word }
 
-@precedence {   
+@precedence {
+  pipe @left,
   multiplicative @left,
-  additive @left
+  additive @left,
   call
 }
 
@@ -63,11 +64,11 @@ consumeToTerminator {
 }
 
 PipeExpr {
-  pipeOperand ("|" pipeOperand)+
+  pipeOperand (!pipe "|" pipeOperand)+
 }
 
 pipeOperand {
-  FunctionCall | FunctionCallOrIdentifier
+  FunctionCall | FunctionCallOrIdentifier | expressionWithoutIdentifier
 }
 
 FunctionCallOrIdentifier {
