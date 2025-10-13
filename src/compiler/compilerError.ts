@@ -1,6 +1,11 @@
 export class CompilerError extends Error {
   constructor(message: string, private from: number, private to: number) {
     super(message)
+
+    if (from < 0 || to < 0 || to < from) {
+      throw new Error(`Invalid CompilerError positions: from=${from}, to=${to}`)
+    }
+
     this.name = 'CompilerError'
     this.message = message
   }
@@ -19,27 +24,24 @@ export class CompilerError extends Error {
     const lines = previousSevenLines
       .map((line, index) => {
         const currentLineNumber = lineNumber - previousSevenLines.length + index + 1
+        // repace leading whitespace with barely visible characters so they show up in terminal
+        line = line.replace(/^\s+/, (ws) => ws.replace(/ /g, green('·')).replace(/\t/g, '→   '))
         return `${grey(currentLineNumber.toString().padStart(padding))} │ ${line}`
       })
       .join('\n')
 
-    const underlineStartLen = (columnEnd - columnStart) / 2
-    const underlineEndLen = columnEnd - columnStart - underlineStartLen
-    const underline =
-      ' '.repeat(columnStart - 1) +
-      '─'.repeat(underlineStartLen) +
-      '┬' +
-      '─'.repeat(underlineEndLen)
+    const underlineLen = columnEnd - columnStart + 1
+    const underline = ' '.repeat(columnStart - 1) + red('═'.repeat(underlineLen))
 
-    const messageWithArrow =
-      ' '.repeat(columnStart + underlineStartLen - 1) + '╰── ' + blue(this.message)
+    const messageWithArrow = blue(this.message)
 
     const message = `${green('')}
 ${ws}╭───┨ ${red('Compiler Error')} ┃
 ${ws}│
 ${lines}
 ${ws}│ ${underline}
-${ws}│ ${messageWithArrow}
+${ws}│ ${messageWithArrow.split('\n').join(`\n${ws}│ `)}
+${ws}│
 ${ws}╰───
     `
 
@@ -54,7 +56,7 @@ ${ws}╰───
       const line = lines[i]!
       if (this.from >= currentPos && this.from <= currentPos + line.length) {
         const columnStart = this.from - currentPos + 1
-        const columnEnd = columnStart + (this.to - this.from) - 1
+        const columnEnd = columnStart + (this.to - this.from)
 
         // If the error spans multiple lines, so just return the line start
         if (columnEnd > line.length) {

@@ -13,7 +13,11 @@ import {
   getFunctionDefParts,
   getIfExprParts,
   getNamedArgParts,
+  getPipeExprParts,
 } from '#compiler/utils'
+
+const DEBUG = false
+// const DEBUG = true
 
 type Label = `.${string}`
 export class Compiler {
@@ -25,13 +29,20 @@ export class Compiler {
   constructor(public input: string) {
     try {
       const cst = parser.parse(input)
-      const errors = checkTreeForErrors(cst, input)
+      const errors = checkTreeForErrors(cst)
 
-      if (errors.length > 0) {
-        throw new CompilerError(`Syntax errors found:\n${errors.join('\n')}`, 0, input.length)
+      const firstError = errors[0]
+      if (firstError) {
+        throw firstError
       }
 
       this.#compileCst(cst, input)
+
+      throw new CompilerError(
+        'I am a very long fake error to test scrolling and other things this is super long\nand has multiple lines\nand just keeps going and going and going',
+        20,
+        25
+      )
 
       // Add the labels
       for (const [label, labelInstructions] of this.fnLabels) {
@@ -40,7 +51,7 @@ export class Compiler {
         this.instructions.push(['RETURN'])
       }
 
-      // logInstructions(this.instructions)
+      if (DEBUG) logInstructions(this.instructions)
 
       this.bytecode = toBytecode(this.instructions)
     } catch (error) {
@@ -67,6 +78,9 @@ export class Compiler {
 
   #compileNode(node: SyntaxNode, input: string): ProgramItem[] {
     const value = input.slice(node.from, node.to)
+
+    if (DEBUG) console.log(`🫦  ${node.name}: ${value}`)
+
     switch (node.type.id) {
       case terms.Number:
         const number = Number(value)
@@ -289,123 +303,61 @@ export class Compiler {
       }
 
       case terms.PipeExpr: {
-        const allChildren = getAllChildren(node)
-        // Filter out the pipe operator nodes (they're just syntax)
-        const operands = allChildren.filter((child) => child.type.name !== 'operator')
-        if (operands.length < 2) {
+        const { pipedFunctionCall, pipeReceivers } = getPipeExprParts(node)
+        if (!pipedFunctionCall || pipeReceivers.length === 0) {
           throw new CompilerError('PipeExpr must have at least two operands', node.from, node.to)
         }
 
         const instructions: ProgramItem[] = []
+        instructions.push(...this.#compileNode(pipedFunctionCall, input))
 
-        // Compile first operand normally
-        instructions.push(...this.#compileNode(operands[0]!, input))
+        pipeReceivers.forEach((pipeReceiver) => {
+          instructions.push(['STORE', '_pipe_value'])
 
-        // For each subsequent operand, transform it to receive piped value as first arg
-        for (let i = 1; i < operands.length; i++) {
-          const operand = operands[i]!
+          const { identifierNode, namedArgs, positionalArgs } = getFunctionCallParts(
+            pipeReceiver,
+            input
+          )
 
-          // Result from previous stage is on stack
-          // We need to make it the first argument to the next call
+          instructions.push(...this.#compileNode(identifierNode, input))
 
-          if (operand.type.id === terms.FunctionCallOrIdentifier) {
-            // Simple identifier - emit TRY_CALL with piped value as single argument
-            const identifierNode = operand.getChild('Identifier')
-            if (!identifierNode) {
-              throw new CompilerError('FunctionCallOrIdentifier must have Identifier', operand.from, operand.to)
-            }
-            const fnName = input.slice(identifierNode.from, identifierNode.to)
+          const isUnderscoreInPositionalArgs = positionalArgs.some(
+            (arg) => arg.type.id === terms.Underscore
+          )
+          const isUnderscoreInNamedArgs = namedArgs.some((arg) => {
+            const { valueNode } = getNamedArgParts(arg, input)
+            return valueNode.type.id === terms.Underscore
+          })
 
-            // Stack has: [piped_value]
-            // Store piped value temporarily
-            instructions.push(['STORE', '__pipe_value'])
+          const shouldPushPositionalArg = !isUnderscoreInPositionalArgs && !isUnderscoreInNamedArgs
 
-            // Load function
-            instructions.push(['TRY_LOAD', fnName])
-
-            // Load piped value as first arg
-            instructions.push(['LOAD', '__pipe_value'])
-
-            // Call with 1 positional arg and 0 named args
-            instructions.push(['PUSH', 1])
-            instructions.push(['PUSH', 0])
-            instructions.push(['CALL'])
-
-          } else if (operand.type.id === terms.FunctionCall) {
-            // Function call with arguments - check for underscore placeholder
-            const { identifierNode, namedArgs, positionalArgs } = getFunctionCallParts(operand, input)
-
-            // Check if any positional arg is an underscore placeholder
-            let underscoreIndex = -1
-            for (let j = 0; j < positionalArgs.length; j++) {
-              const arg = positionalArgs[j]!
-              const argValue = input.slice(arg.from, arg.to)
-              if (argValue === '_') {
-                underscoreIndex = j
-                break
-              }
-            }
-
-            if (underscoreIndex !== -1) {
-              // Underscore found - replace it with piped value at that position
-              // Store piped value temporarily
-              instructions.push(['STORE', '__pipe_value'])
-
-              // Load function
-              instructions.push(...this.#compileNode(identifierNode, input))
-
-              // Push positional args, replacing underscore with piped value
-              for (let j = 0; j < positionalArgs.length; j++) {
-                if (j === underscoreIndex) {
-                  instructions.push(['LOAD', '__pipe_value'])
-                } else {
-                  instructions.push(...this.#compileNode(positionalArgs[j]!, input))
-                }
-              }
-
-              // Push named args
-              namedArgs.forEach((arg) => {
-                const { name, valueNode } = getNamedArgParts(arg, input)
-                instructions.push(['PUSH', name])
-                instructions.push(...this.#compileNode(valueNode, input))
-              })
-
-              // Call with positionalArgs.length and namedArgs
-              instructions.push(['PUSH', positionalArgs.length])
-              instructions.push(['PUSH', namedArgs.length])
-              instructions.push(['CALL'])
-            } else {
-              // No underscore - piped value becomes first argument
-              // Store piped value temporarily
-              instructions.push(['STORE', '__pipe_value'])
-
-              // Load function
-              instructions.push(...this.#compileNode(identifierNode, input))
-
-              // Push piped value as first arg
-              instructions.push(['LOAD', '__pipe_value'])
-
-              // Push remaining positional args
-              positionalArgs.forEach((arg) => {
-                instructions.push(...this.#compileNode(arg, input))
-              })
-
-              // Push named args
-              namedArgs.forEach((arg) => {
-                const { name, valueNode } = getNamedArgParts(arg, input)
-                instructions.push(['PUSH', name])
-                instructions.push(...this.#compileNode(valueNode, input))
-              })
-
-              // Call with (positionalArgs + 1 for piped value) and namedArgs
-              instructions.push(['PUSH', positionalArgs.length + 1])
-              instructions.push(['PUSH', namedArgs.length])
-              instructions.push(['CALL'])
-            }
-          } else {
-            throw new CompilerError(`Unsupported pipe operand type: ${operand.type.name}`, operand.from, operand.to)
+          // If no underscore is explicitly used, add the piped value as the first positional arg
+          if (shouldPushPositionalArg) {
+            instructions.push(['LOAD', '_pipe_value'])
           }
-        }
+
+          positionalArgs.forEach((arg) => {
+            if (arg.type.id === terms.Underscore) {
+              instructions.push(['LOAD', '_pipe_value'])
+            } else {
+              instructions.push(...this.#compileNode(arg, input))
+            }
+          })
+
+          namedArgs.forEach((arg) => {
+            const { name, valueNode } = getNamedArgParts(arg, input)
+            instructions.push(['PUSH', name])
+            if (valueNode.type.id === terms.Underscore) {
+              instructions.push(['LOAD', '_pipe_value'])
+            } else {
+              instructions.push(...this.#compileNode(valueNode, input))
+            }
+          })
+
+          instructions.push(['PUSH', positionalArgs.length + (shouldPushPositionalArg ? 1 : 0)])
+          instructions.push(['PUSH', namedArgs.length])
+          instructions.push(['CALL'])
+        })
 
         return instructions
       }

@@ -2,13 +2,12 @@ import { CompilerError } from '#compiler/compilerError.ts'
 import * as terms from '#parser/shrimp.terms'
 import type { SyntaxNode, Tree } from '@lezer/common'
 
-export const checkTreeForErrors = (tree: Tree, input: string): string[] => {
-  const errors: string[] = []
+export const checkTreeForErrors = (tree: Tree): CompilerError[] => {
+  const errors: CompilerError[] = []
   tree.iterate({
     enter: (node) => {
       if (node.type.isError) {
-        const errorText = input.slice(node.from, node.to)
-        errors.push(`Syntax error at ${node.from}-${node.to}: "${errorText}"`)
+        errors.push(new CompilerError(`Unexpected syntax.`, node.from, node.to))
       }
     },
   })
@@ -70,18 +69,16 @@ export const getFunctionDefParts = (node: SyntaxNode, input: string) => {
     )
   }
 
-  const paramNames = getAllChildren(paramsNode)
-    .map((param) => {
-      if (param.type.id !== terms.Identifier) {
-        throw new CompilerError(
-          `FunctionDef params must be Identifiers, got ${param.type.name}`,
-          param.from,
-          param.to
-        )
-      }
-      return input.slice(param.from, param.to)
-    })
-    .join(' ')
+  const paramNames = getAllChildren(paramsNode).map((param) => {
+    if (param.type.id !== terms.Identifier) {
+      throw new CompilerError(
+        `FunctionDef params must be Identifiers, got ${param.type.name}`,
+        param.from,
+        param.to
+      )
+    }
+    return input.slice(param.from, param.to)
+  })
 
   return { paramNames, bodyNode }
 }
@@ -115,7 +112,7 @@ export const getNamedArgParts = (node: SyntaxNode, input: string) => {
     throw new CompilerError(message, node.from, node.to)
   }
 
-  const name = input.slice(namedArgPrefix.from, namedArgPrefix.to - 2) // Remove the trailing =
+  const name = input.slice(namedArgPrefix.from, namedArgPrefix.to - 1) // Remove the trailing =
   return { name, valueNode }
 }
 
@@ -155,4 +152,16 @@ export const getIfExprParts = (node: SyntaxNode, input: string) => {
   })
 
   return { conditionNode, thenBlock, elseThenBlock, elseIfBlocks }
+}
+
+export const getPipeExprParts = (node: SyntaxNode) => {
+  const [pipedFunctionCall, operator, ...rest] = getAllChildren(node)
+  if (!pipedFunctionCall || !operator || rest.length === 0) {
+    const message = `PipeExpr expected at least 3 children, got ${getAllChildren(node).length}`
+    throw new CompilerError(message, node.from, node.to)
+  }
+
+  const pipeReceivers = rest.filter((child) => child.name !== 'operator')
+
+  return { pipedFunctionCall, pipeReceivers }
 }

@@ -70,6 +70,17 @@ describe('compiler', () => {
     expect(`add = fn a b: a + b end; add 2 9`).toEvaluateTo(11)
   })
 
+  test('function call with named args', () => {
+    expect(`minus = fn a b: a - b end; minus b=2 a=9`).toEvaluateTo(7)
+  })
+
+  test('function call with named and positional args', () => {
+    expect(`minus = fn a b: a - b end; minus b=2 9`).toEvaluateTo(7)
+    expect(`minus = fn c d: a - b end; minus 90 b=20`).toEvaluateTo(70)
+    expect(`minus = fn e f: a - b end; minus a=900 200`).toEvaluateTo(700)
+    expect(`minus = fn g h: a - b end; minus 2000 a=9000`).toEvaluateTo(7000)
+  })
+
   test('function call with no args', () => {
     expect(`bloop = fn: 'bloop' end; bloop`).toEvaluateTo('bloop')
   })
@@ -136,7 +147,7 @@ describe('errors', () => {
   })
 })
 
-describe.skip('multiline tests', () => {
+describe('multiline tests', () => {
   test('multiline function', () => {
     expect(`
       add = fn a b:
