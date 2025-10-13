@@ -63,15 +63,15 @@ describe('compiler', () => {
   })
 
   test('function', () => {
-    expect(`fn a b: a + b`).toEvaluateTo(Function)
+    expect(`fn a b: a + b end`).toEvaluateTo(Function)
   })
 
   test('function call', () => {
-    expect(`add = fn a b: a + b; add 2 9`).toEvaluateTo(11)
+    expect(`add = fn a b: a + b end; add 2 9`).toEvaluateTo(11)
   })
 
   test('function call with no args', () => {
-    expect(`bloop = fn: 'bloop'; bloop`).toEvaluateTo('bloop')
+    expect(`bloop = fn: 'bloop' end; bloop`).toEvaluateTo('bloop')
   })
 
   test('simple conditionals', () => {
