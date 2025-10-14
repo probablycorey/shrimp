@@ -98,7 +98,8 @@ describe('Parentheses', () => {
 
     expect("('hello')").toMatchTree(`
       ParenExpr
-        String hello`)
+        String
+          StringFragment hello`)
 
     expect('(true)').toMatchTree(`
       ParenExpr
@@ -413,7 +414,8 @@ describe('if/elsif/else', () => {
           Number 1
         colon :
         ThenBlock
-          String cool
+          String
+            StringFragment cool
     `)
 
     expect('a = if x: 2').toMatchTree(`
@@ -624,8 +626,10 @@ describe('pipe expressions', () => {
 describe('multiline', () => {
   test('parses multiline strings', () => {
     expect(`'first'\n'second'`).toMatchTree(`
-      String first
-      String second`)
+      String
+        StringFragment first
+      String
+        StringFragment second`)
   })
 
   test('parses multiline functions', () => {
@@ -686,6 +690,29 @@ end
         FunctionCallOrIdentifier
           Identifier x
         end end
+    `)
+  })
+})
+
+describe('string interpolation', () => {
+  test('string with variable interpolation', () => {
+    expect("'hello $name'").toMatchTree(`
+      String
+        StringFragment ${'hello '}
+        Interpolation
+          Identifier name
+    `)
+  })
+
+  test('string with expression interpolation', () => {
+    expect("'sum is $(a + b)'").toMatchTree(`
+      String
+        StringFragment ${'sum is '}
+        Interpolation
+          BinOp
+            Identifier a
+            operator +
+            Identifier b
     `)
   })
 })

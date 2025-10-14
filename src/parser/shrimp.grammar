@@ -6,11 +6,11 @@
 
 @tokens {
   @precedence { Number "-" }
-  
+
+  StringFragment { !['\\$]+ }
   NamedArgPrefix { $[a-z]+ "=" }
   Number { "-"? $[0-9]+ ('.' $[0-9]+)? }
   Boolean { "true" | "false" }
-  String { '\'' ![']* '\'' }
   newlineOrSemicolon { "\n" | ";" }
   eof { @eof }
   space { " " | "\t" }
@@ -36,6 +36,7 @@
   "*"[@name=operator]
   "/"[@name=operator]
   "|"[@name=operator]
+
 }
 
 @external tokens tokenizer from "./tokenizer" { Identifier, Word }
@@ -160,11 +161,34 @@ BinOp {
 }
 
 ParenExpr {
-  leftParen (ambiguousFunctionCall | BinOp | expressionWithoutIdentifier | ConditionalOp | PipeExpr) rightParen
+  leftParen parenContent rightParen
+}
+
+parenContent {
+  (ambiguousFunctionCall | BinOp | expressionWithoutIdentifier | ConditionalOp | PipeExpr)
 }
 
 expression {
   expressionWithoutIdentifier | Identifier
+}
+
+@skip {} {
+  String { "'" stringContent* "'" }
+}
+
+stringContent {
+  StringFragment |
+  Interpolation |
+  StringEscape
+}
+
+Interpolation {
+  "$" Identifier |
+  "$" leftParen parenContent rightParen
+}
+
+StringEscape {
+  "\\" ("$" | "n" | "t" | "r" | "\\" | "'")
 }
 
 // We need expressionWithoutIdentifier to avoid conflicts in consumeToTerminator.

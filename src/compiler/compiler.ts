@@ -16,8 +16,8 @@ import {
   getPipeExprParts,
 } from '#compiler/utils'
 
-const DEBUG = false
-// const DEBUG = true
+// const DEBUG = false
+const DEBUG = true
 
 type Label = `.${string}`
 export class Compiler {

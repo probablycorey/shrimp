@@ -286,6 +286,110 @@ The `toMatchTree` helper compares parser output with expected CST structure.
 
 **Empty line parsing**: The grammar structure `(statement | newlineOrSemicolon)+ eof?` allows proper empty line and EOF handling.
 
+## Lezer: Surprising Behaviors
+
+These discoveries came from implementing string interpolation with external tokenizers. See `tmp/string-test4.grammar` for working examples.
+
+### 1. Rule Capitalization Controls Tree Structure
+
+**The most surprising discovery**: Rule names determine whether nodes appear in the parse tree.
+
+**Lowercase rules get inlined** (no tree nodes):
+```lezer
+statement { assign | expr }  // ❌ No "statement" node
+assign { x "=" y }            // ❌ No "assign" node
+expr { x | y }                // ❌ No "expr" node
+```
+
+**Capitalized rules create tree nodes**:
+```lezer
+Statement { Assign | Expr }  // ✅ Creates Statement node
+Assign { x "=" y }           // ✅ Creates Assign node
+Expr { x | y }               // ✅ Creates Expr node
+```
+
+**Why this matters**: When debugging grammar that "doesn't match," check capitalization first. The rules might be matching perfectly—they're just being compiled away!
+
+Example: `x = 42` was parsing as `Program(Identifier,"=",Number)` instead of `Program(Statement(Assign(...)))`. The grammar rules existed and were matching, but they were inlined because they were lowercase.
+
+### 2. @skip {} Wrapper is Essential for Preserving Whitespace
+
+**Initial assumption (wrong)**: Could exclude whitespace from token patterns to avoid needing `@skip {}`.
+
+**Reality**: The `@skip {}` wrapper is absolutely required to preserve whitespace in strings:
+
+```lezer
+@skip {} {
+  String { "'" StringContent* "'" }
+}
+
+@tokens {
+  StringFragment { !['\\$]+ }  // Matches everything including spaces
+}
+```
+
+**Without the wrapper**: All spaces get stripped by the global `@skip { space }`, even though `StringFragment` can match them.
+
+**Test that proved it wrong**: `'  spaces  '` was being parsed as `"spaces"` (leading/trailing spaces removed) until we added `@skip {}`.
+
+### 3. External Tokenizers Work Inside @skip {} Blocks
+
+**Initial assumption (wrong)**: External tokenizers can't be used inside `@skip {}` blocks, so identifier patterns need to be duplicated as simple tokens.
+
+**Reality**: External tokenizers work perfectly inside `@skip {}` blocks! The tokenizer gets called even when skip is disabled.
+
+**Working pattern**:
+```lezer
+@external tokens tokenizer from "./tokenizer" { Identifier, Word }
+
+@skip {} {
+  String { "'" StringContent* "'" }
+}
+
+Interpolation {
+  "$" Identifier |           // ← Uses external tokenizer!
+  "$" "(" expr ")"
+}
+```
+
+**Test that proved it**: `'hello $name'` correctly calls the external tokenizer for `name` inside the string, creating an `Identifier` token. No duplication needed!
+
+### 4. Single-Character Tokens Can Be Literals
+
+**Initial approach**: Define every single character as a token:
+```lezer
+@tokens {
+  dollar[@name="$"] { "$" }
+  backslash[@name="\\"] { "\\" }
+}
+```
+
+**Simpler approach**: Just use literals in the grammar rules:
+```lezer
+Interpolation {
+  "$" Identifier |           // Literal "$"
+  "$" "(" expr ")"
+}
+
+StringEscape {
+  "\\" ("$" | "n" | ...)     // Literal "\\"
+}
+```
+
+This works fine and reduces boilerplate in the @tokens section.
+
+### 5. StringFragment as Simple Token, Not External
+
+For string content, use a simple token pattern instead of handling it in the external tokenizer:
+
+```lezer
+@tokens {
+  StringFragment { !['\\$]+ }  // Simple pattern: not quote, backslash, or dollar
+}
+```
+
+The external tokenizer should focus on Identifier/Word distinction at the top level. String content is simpler and doesn't need the complexity of the external tokenizer.
+
 ### Why expressionWithoutIdentifier Exists
 
 The grammar has an unusual pattern: `expressionWithoutIdentifier`. This exists to solve a GLR conflict:

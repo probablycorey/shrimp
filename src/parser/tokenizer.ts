@@ -11,14 +11,16 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
 
   while (true) {
     ch = getFullCodePoint(input, pos)
-    if (isWhitespace(ch) || ch === -1) break
+
+    // Words and identifiers end at whitespace, single quotes, or end of input.
+    if (isWhitespace(ch) || ch === 39 /* ' */ || ch === -1) break
 
     // Certain characters might end a word or identifier if they are followed by whitespace.
     // This allows things like `a = hello; 2` or a = (basename ./file.txt)
     // to work as expected.
-    if ((canBeWord && (ch === 59 /* ; */ || ch === 41)) /* ) */ || ch === 58 /* : */) {
+    if (canBeWord && (ch === 59 /* ; */ || ch === 41 /* ) */ || ch === 58) /* : */) {
       const nextCh = getFullCodePoint(input, pos + 1)
-      if (isWhitespace(nextCh) || nextCh === -1) {
+      if (isWhitespace(nextCh) || nextCh === 39 /* ' */ || nextCh === -1) {
         break
       }
     }
