@@ -1,5 +1,5 @@
 import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
-import { Identifier, Word, WordFragment } from './shrimp.terms'
+import { Identifier, Word } from './shrimp.terms'
 
 // The only chars that can't be words are whitespace, apostrophes, closing parens, and EOF.
 
@@ -16,18 +16,19 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
 
     if (!isWordChar(ch)) break
 
-    // Stop at $ if it's followed by identifier start or (
-    // This allows word interpolation like path/$file or result-$(expr)
-    if (ch === 36 /* $ */) {
-      const nextCh = getFullCodePoint(input, pos + 1)
-      if (isLowercaseLetter(nextCh) || isEmoji(nextCh) || nextCh === 40 /* ( */) {
-        break
+    // Handle backslash escapes: consume backslash + next char
+    if (ch === 92 /* \ */) {
+      isValidIdentifier = false
+      pos += getCharSize(ch) // skip backslash
+      const nextCh = getFullCodePoint(input, pos)
+      if (nextCh !== -1) { // if not EOF
+        pos += getCharSize(nextCh) // skip escaped char
       }
+      continue
     }
 
     // Certain characters might end a word or identifier if they are followed by whitespace.
     // This allows things like `a = hello; 2` of if `x: y` to parse correctly.
-    // to work as expected.
     if (canBeWord && (ch === 59 /* ; */ || ch === 58) /* : */) {
       const nextCh = getFullCodePoint(input, pos + 1)
       if (!isWordChar(nextCh)) break
@@ -43,7 +44,7 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
   }
 
   input.advance(pos)
-  input.acceptToken(isValidIdentifier ? Identifier : WordFragment)
+  input.acceptToken(isValidIdentifier ? Identifier : Word)
 })
 
 const isWhiteSpace = (ch: number): boolean => {
