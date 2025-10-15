@@ -14,12 +14,37 @@ import {
   getIfExprParts,
   getNamedArgParts,
   getPipeExprParts,
+  getStringParts,
 } from '#compiler/utils'
 
-// const DEBUG = false
-const DEBUG = true
+const DEBUG = false
+// const DEBUG = true
 
 type Label = `.${string}`
+
+// Process escape sequences in strings
+function processEscapeSequence(escapeSeq: string): string {
+  // escapeSeq includes the backslash, e.g., "\n", "\$", "\\"
+  if (escapeSeq.length !== 2) return escapeSeq
+
+  switch (escapeSeq[1]) {
+    case 'n':
+      return '\n'
+    case 't':
+      return '\t'
+    case 'r':
+      return '\r'
+    case '\\':
+      return '\\'
+    case "'":
+      return "'"
+    case '$':
+      return '$'
+    default:
+      return escapeSeq // Unknown escape, keep as-is
+  }
+}
+
 export class Compiler {
   instructions: ProgramItem[] = []
   fnLabels = new Map<Label, ProgramItem[]>()
@@ -84,9 +109,56 @@ export class Compiler {
 
         return [[`PUSH`, number]]
 
-      case terms.String:
-        const strValue = value.slice(1, -1).replace(/\\/g, '')
-        return [[`PUSH`, strValue]]
+      case terms.String: {
+        const { parts, hasInterpolation } = getStringParts(node, input)
+
+        // Simple string without interpolation or escapes - extract text directly
+        if (!hasInterpolation) {
+          // Remove surrounding quotes and return as-is
+          const strValue = value.slice(1, -1)
+          return [['PUSH', strValue]]
+        }
+
+        // String with interpolation or escapes - compile each part and concatenate
+        const instructions: ProgramItem[] = []
+        parts.forEach((part) => {
+          const partValue = input.slice(part.from, part.to)
+
+          switch (part.type.id) {
+            case terms.StringFragment:
+              // Plain text fragment - just push as-is
+              instructions.push(['PUSH', partValue])
+              break
+
+            case terms.StringEscape:
+              // Process escape sequence and push the result
+              const processed = processEscapeSequence(partValue)
+              instructions.push(['PUSH', processed])
+              break
+
+            case terms.Interpolation:
+              // Interpolation contains either Identifier or ParenExpr (the $ is anonymous)
+              const child = part.firstChild
+              if (!child) {
+                throw new CompilerError('Interpolation has no child', part.from, part.to)
+              }
+              // Compile the Identifier or ParenExpr
+              instructions.push(...this.#compileNode(child, input))
+              break
+
+            default:
+              throw new CompilerError(
+                `Unexpected string part: ${part.type.name}`,
+                part.from,
+                part.to
+              )
+          }
+        })
+
+        // Use STR_CONCAT to join all parts
+        instructions.push(['STR_CONCAT', parts.length])
+        return instructions
+      }
 
       case terms.Boolean: {
         return [[`PUSH`, value === 'true']]

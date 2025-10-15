@@ -12,15 +12,40 @@ describe('string interpolation', () => {
     `)
   })
 
-  test('string with expression interpolation', () => {
+  test('string with expression interpolation in the middle', () => {
+    expect("'sum is $(a + b)!'").toMatchTree(`
+      String
+        StringFragment ${'sum is '}
+        Interpolation
+          ParenExpr
+            BinOp
+              Identifier a
+              operator +
+              Identifier b
+        StringFragment !
+    `)
+  })
+
+  test('string with expression interpolation at the end', () => {
     expect("'sum is $(a + b)'").toMatchTree(`
       String
         StringFragment ${'sum is '}
         Interpolation
-          BinOp
-            Identifier a
-            operator +
-            Identifier b
+          ParenExpr
+            BinOp
+              Identifier a
+              operator +
+              Identifier b
+    `)
+  })
+
+  test('string with expression smooshed inbetween', () => {
+    expect("'x/$y/z'").toMatchTree(`
+      String
+        StringFragment x/
+        Interpolation
+          Identifier y
+        StringFragment /z
     `)
   })
 })

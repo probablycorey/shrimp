@@ -158,3 +158,39 @@ describe('multiline tests', () => {
     `).toEvaluateTo(7)
   })
 })
+
+describe('string interpolation', () => {
+  test('string with variable interpolation', () => {
+    expect(`name = 'Alice'; 'hello $name'`).toEvaluateTo('hello Alice')
+  })
+
+  test('string with expression interpolation', () => {
+    expect(`'sum is $(2 + 3)'`).toEvaluateTo('sum is 5')
+  })
+
+  test('string with multiple interpolations', () => {
+    expect(`a = 10; b = 20; '$a + $b = $(a + b)'`).toEvaluateTo('10 + 20 = 30')
+  })
+
+  test('string with escape sequences', () => {
+    expect(`'line1\\nline2'`).toEvaluateTo('line1\nline2')
+    expect(`'tab\\there'`).toEvaluateTo('tab\there')
+    expect(`'back\\\\slash'`).toEvaluateTo('back\\slash')
+  })
+
+  test('string with escaped dollar sign', () => {
+    expect(`'price is \\$10'`).toEvaluateTo('price is $10')
+  })
+
+  test('string with mixed interpolation and escapes', () => {
+    expect(`x = 5; 'value: $x\\ntotal: $(x * 2)'`).toEvaluateTo('value: 5\ntotal: 10')
+  })
+
+  test('interpolation with unbound identifier', () => {
+    expect(`'greeting: $hello'`).toEvaluateTo('greeting: hello')
+  })
+
+  test('nested expression interpolation', () => {
+    expect(`a = 3; b = 4; 'result: $(a * (b + 1))'`).toEvaluateTo('result: 15')
+  })
+})

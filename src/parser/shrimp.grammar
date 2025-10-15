@@ -161,11 +161,7 @@ BinOp {
 }
 
 ParenExpr {
-  leftParen parenContent rightParen
-}
-
-parenContent {
-  (ambiguousFunctionCall | BinOp | expressionWithoutIdentifier | ConditionalOp | PipeExpr)
+  leftParen (ambiguousFunctionCall | BinOp | expressionWithoutIdentifier | ConditionalOp | PipeExpr) rightParen
 }
 
 expression {
@@ -184,7 +180,7 @@ stringContent {
 
 Interpolation {
   "$" Identifier |
-  "$" leftParen parenContent rightParen
+  "$" ParenExpr
 }
 
 StringEscape {

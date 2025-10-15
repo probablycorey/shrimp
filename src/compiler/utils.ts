@@ -166,3 +166,35 @@ export const getPipeExprParts = (node: SyntaxNode) => {
 
   return { pipedFunctionCall, pipeReceivers }
 }
+
+export const getStringParts = (node: SyntaxNode, input: string) => {
+  const children = getAllChildren(node)
+
+  // String nodes always have at least 2 children (the quote tokens)
+  // For simple strings like 'hello' with no interpolation, there are no child nodes
+  // The text is just between the quotes
+  const parts = children.filter((child) => {
+    return (
+      child.type.id === terms.StringFragment ||
+      child.type.id === terms.Interpolation ||
+      child.type.id === terms.StringEscape
+    )
+  })
+
+  // Validate each part is the expected type
+  parts.forEach((part) => {
+    if (
+      part.type.id !== terms.StringFragment &&
+      part.type.id !== terms.Interpolation &&
+      part.type.id !== terms.StringEscape
+    ) {
+      throw new CompilerError(
+        `String child must be StringFragment, Interpolation, or StringEscape, got ${part.type.name}`,
+        part.from,
+        part.to
+      )
+    }
+  })
+
+  return { parts, hasInterpolation: parts.length > 0 }
+}

@@ -1,9 +1,11 @@
 import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
 import { Identifier, Word } from './shrimp.terms'
 
+// The only chars that can't be words are whitespace, apostrophes, closing parens, and EOF.
+
 export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack) => {
   let ch = getFullCodePoint(input, 0)
-  if (isWhitespace(ch) || ch === -1) return
+  if (!isWordChar(ch)) return
 
   let pos = getCharSize(ch)
   let isValidIdentifier = isLowercaseLetter(ch) || isEmoji(ch)
@@ -12,17 +14,14 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
   while (true) {
     ch = getFullCodePoint(input, pos)
 
-    // Words and identifiers end at whitespace, single quotes, or end of input.
-    if (isWhitespace(ch) || ch === 39 /* ' */ || ch === -1) break
+    if (!isWordChar(ch)) break
 
     // Certain characters might end a word or identifier if they are followed by whitespace.
-    // This allows things like `a = hello; 2` or a = (basename ./file.txt)
+    // This allows things like `a = hello; 2` of if `x: y` to parse correctly.
     // to work as expected.
-    if (canBeWord && (ch === 59 /* ; */ || ch === 41 /* ) */ || ch === 58) /* : */) {
+    if (canBeWord && (ch === 59 /* ; */ || ch === 58) /* : */) {
       const nextCh = getFullCodePoint(input, pos + 1)
-      if (isWhitespace(nextCh) || nextCh === 39 /* ' */ || nextCh === -1) {
-        break
-      }
+      if (!isWordChar(nextCh)) break
     }
 
     // Track identifier validity
@@ -38,8 +37,15 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
   input.acceptToken(isValidIdentifier ? Identifier : Word)
 })
 
-const isWhitespace = (ch: number): boolean => {
+const isWhiteSpace = (ch: number): boolean => {
   return ch === 32 /* space */ || ch === 10 /* \n */ || ch === 9 /* tab */ || ch === 13 /* \r */
+}
+
+const isWordChar = (ch: number): boolean => {
+  const closingParen = ch === 41 /* ) */
+  const eof = ch === -1
+
+  return !isWhiteSpace(ch) && !closingParen && !eof
 }
 
 const isLowercaseLetter = (ch: number): boolean => {
