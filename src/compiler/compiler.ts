@@ -23,7 +23,7 @@ const DEBUG = false
 type Label = `.${string}`
 
 // Process escape sequences in strings
-function processEscapeSequence(escapeSeq: string): string {
+function processEscapeSeq(escapeSeq: string): string {
   // escapeSeq includes the backslash, e.g., "\n", "\$", "\\"
   if (escapeSeq.length !== 2) return escapeSeq
 
@@ -130,9 +130,9 @@ export class Compiler {
               instructions.push(['PUSH', partValue])
               break
 
-            case terms.StringEscape:
+            case terms.EscapeSeq:
               // Process escape sequence and push the result
-              const processed = processEscapeSequence(partValue)
+              const processed = processEscapeSeq(partValue)
               instructions.push(['PUSH', processed])
               break
 

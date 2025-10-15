@@ -55,7 +55,7 @@ describe('string escape sequences', () => {
     expect("'price is \\$10'").toMatchTree(`
       String
         StringFragment ${'price is '}
-        StringEscape \\$
+        EscapeSeq \\$
         StringFragment 10
     `)
   })
@@ -64,7 +64,7 @@ describe('string escape sequences', () => {
     expect("'it\\'s working'").toMatchTree(`
       String
         StringFragment ${'it'}
-        StringEscape \\'
+        EscapeSeq \\'
         StringFragment ${'s working'}
     `)
   })
@@ -73,7 +73,7 @@ describe('string escape sequences', () => {
     expect("'path\\\\file'").toMatchTree(`
       String
         StringFragment path
-        StringEscape \\\\
+        EscapeSeq \\\\
         StringFragment file
     `)
   })
@@ -82,7 +82,7 @@ describe('string escape sequences', () => {
     expect("'line1\\nline2'").toMatchTree(`
       String
         StringFragment line1
-        StringEscape \\n
+        EscapeSeq \\n
         StringFragment line2
     `)
   })
@@ -91,7 +91,7 @@ describe('string escape sequences', () => {
     expect("'col1\\tcol2'").toMatchTree(`
       String
         StringFragment col1
-        StringEscape \\t
+        EscapeSeq \\t
         StringFragment col2
     `)
   })
@@ -100,7 +100,7 @@ describe('string escape sequences', () => {
     expect("'text\\rmore'").toMatchTree(`
       String
         StringFragment text
-        StringEscape \\r
+        EscapeSeq \\r
         StringFragment more
     `)
   })
@@ -108,11 +108,11 @@ describe('string escape sequences', () => {
   test('multiple escape sequences', () => {
     expect("'\\$10\\nTotal: \\$20'").toMatchTree(`
       String
-        StringEscape \\$
+        EscapeSeq \\$
         StringFragment 10
-        StringEscape \\n
+        EscapeSeq \\n
         StringFragment ${'Total: '}
-        StringEscape \\$
+        EscapeSeq \\$
         StringFragment 20
     `)
   })

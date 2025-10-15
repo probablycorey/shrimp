@@ -177,7 +177,7 @@ export const getStringParts = (node: SyntaxNode, input: string) => {
     return (
       child.type.id === terms.StringFragment ||
       child.type.id === terms.Interpolation ||
-      child.type.id === terms.StringEscape
+      child.type.id === terms.EscapeSeq
     )
   })
 
@@ -186,10 +186,10 @@ export const getStringParts = (node: SyntaxNode, input: string) => {
     if (
       part.type.id !== terms.StringFragment &&
       part.type.id !== terms.Interpolation &&
-      part.type.id !== terms.StringEscape
+      part.type.id !== terms.EscapeSeq
     ) {
       throw new CompilerError(
-        `String child must be StringFragment, Interpolation, or StringEscape, got ${part.type.name}`,
+        `String child must be StringFragment, Interpolation, or EscapeSeq, got ${part.type.name}`,
         part.from,
         part.to
       )

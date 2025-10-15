@@ -39,7 +39,7 @@
 
 }
 
-@external tokens tokenizer from "./tokenizer" { Identifier, Word }
+@external tokens tokenizer from "./tokenizer" { Identifier, WordFragment }
 
 @precedence {
   pipe @left,
@@ -170,12 +170,13 @@ expression {
 
 @skip {} {
   String { "'" stringContent* "'" }
+  
 }
 
 stringContent {
   StringFragment |
   Interpolation |
-  StringEscape
+  EscapeSeq
 }
 
 Interpolation {
@@ -183,9 +184,17 @@ Interpolation {
   "$" ParenExpr
 }
 
-StringEscape {
+EscapeSeq {
   "\\" ("$" | "n" | "t" | "r" | "\\" | "'")
 }
+
+
+Word { wordContent+ }
+
+wordContent {
+  WordFragment | Interpolation | EscapeSeq
+}
+
 
 // We need expressionWithoutIdentifier to avoid conflicts in consumeToTerminator.
 // Without this, when parsing "my-var" at statement level, the parser can't decide:

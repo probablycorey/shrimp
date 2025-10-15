@@ -295,6 +295,7 @@ These discoveries came from implementing string interpolation with external toke
 **The most surprising discovery**: Rule names determine whether nodes appear in the parse tree.
 
 **Lowercase rules get inlined** (no tree nodes):
+
 ```lezer
 statement { assign | expr }  // ❌ No "statement" node
 assign { x "=" y }            // ❌ No "assign" node
@@ -302,6 +303,7 @@ expr { x | y }                // ❌ No "expr" node
 ```
 
 **Capitalized rules create tree nodes**:
+
 ```lezer
 Statement { Assign | Expr }  // ✅ Creates Statement node
 Assign { x "=" y }           // ✅ Creates Assign node
@@ -339,6 +341,7 @@ Example: `x = 42` was parsing as `Program(Identifier,"=",Number)` instead of `Pr
 **Reality**: External tokenizers work perfectly inside `@skip {}` blocks! The tokenizer gets called even when skip is disabled.
 
 **Working pattern**:
+
 ```lezer
 @external tokens tokenizer from "./tokenizer" { Identifier, Word }
 
@@ -357,6 +360,7 @@ Interpolation {
 ### 4. Single-Character Tokens Can Be Literals
 
 **Initial approach**: Define every single character as a token:
+
 ```lezer
 @tokens {
   dollar[@name="$"] { "$" }
@@ -365,13 +369,14 @@ Interpolation {
 ```
 
 **Simpler approach**: Just use literals in the grammar rules:
+
 ```lezer
 Interpolation {
   "$" Identifier |           // Literal "$"
   "$" "(" expr ")"
 }
 
-StringEscape {
+EscapeSeq {
   "\\" ("$" | "n" | ...)     // Literal "\\"
 }
 ```
