@@ -116,4 +116,14 @@ describe('string escape sequences', () => {
         StringFragment 20
     `)
   })
+
+  test('escape sequences with interpolation', () => {
+    expect("'value: $x\\n'").toMatchTree(`
+      String
+        StringFragment value: 
+        Interpolation
+          Identifier x
+        EscapeSeq \\n
+    `)
+  })
 })

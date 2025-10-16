@@ -16,17 +16,6 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
 
     if (!isWordChar(ch)) break
 
-    // Handle backslash escapes: consume backslash + next char
-    if (ch === 92 /* \ */) {
-      isValidIdentifier = false
-      pos += getCharSize(ch) // skip backslash
-      const nextCh = getFullCodePoint(input, pos)
-      if (nextCh !== -1) { // if not EOF
-        pos += getCharSize(nextCh) // skip escaped char
-      }
-      continue
-    }
-
     // Certain characters might end a word or identifier if they are followed by whitespace.
     // This allows things like `a = hello; 2` of if `x: y` to parse correctly.
     if (canBeWord && (ch === 59 /* ; */ || ch === 58) /* : */) {

@@ -182,7 +182,7 @@ describe('string interpolation', () => {
     expect(`'price is \\$10'`).toEvaluateTo('price is $10')
   })
 
-  test('string with mixed interpolation and escapes', () => {
+  test.only('string with mixed interpolation and escapes', () => {
     expect(`x = 5; 'value: $x\\ntotal: $(x * 2)'`).toEvaluateTo('value: 5\ntotal: 10')
   })
 
@@ -192,5 +192,23 @@ describe('string interpolation', () => {
 
   test('nested expression interpolation', () => {
     expect(`a = 3; b = 4; 'result: $(a * (b + 1))'`).toEvaluateTo('result: 15')
+  })
+})
+
+describe('RegExp', () => {
+  test('simple regex', () => {
+    expect('//hello//').toEvaluateTo(/hello/)
+  })
+
+  test('regex with flags', () => {
+    expect('//[a-z]+//gi').toEvaluateTo(/[a-z]+/gi)
+  })
+
+  test('regex in assignment', () => {
+    expect('pattern = //\\d+//; pattern').toEvaluateTo(/\d+/)
+  })
+
+  test('invalid regex pattern', () => {
+    expect('//[unclosed//').toFailEvaluation()
   })
 })

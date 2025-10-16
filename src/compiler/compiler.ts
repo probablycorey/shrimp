@@ -164,6 +164,23 @@ export class Compiler {
         return [[`PUSH`, value === 'true']]
       }
 
+      case terms.RegExp: {
+        // remove the surrounding slashes and any flags
+        const [_, pattern, flags] = value.match(/^\/\/(.*)\/\/([gimsuy]*)$/) || []
+        if (!pattern) {
+          throw new CompilerError(`Invalid regex literal: ${value}`, node.from, node.to)
+        }
+        let regex: RegExp
+
+        try {
+          regex = new RegExp(pattern, flags)
+        } catch (e) {
+          throw new CompilerError(`Invalid regex literal: ${value}`, node.from, node.to)
+        }
+
+        return [['PUSH', regex]]
+      }
+
       case terms.Identifier: {
         return [[`TRY_LOAD`, value]]
       }

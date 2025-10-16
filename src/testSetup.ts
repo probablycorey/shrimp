@@ -101,7 +101,11 @@ expect.extend({
       const vm = new VM(compiler.bytecode)
       await vm.run()
       const result = await vm.run()
-      const value = VMResultToValue(result)
+      let value = VMResultToValue(result)
+
+      // Just treat regex as strings for comparison purposes
+      if (expected instanceof RegExp) expected = String(expected)
+      if (value instanceof RegExp) value = String(value)
 
       if (value === expected) {
         return { pass: true }
@@ -192,7 +196,12 @@ const trimWhitespace = (str: string): string => {
 }
 
 const VMResultToValue = (result: Value): unknown => {
-  if (result.type === 'number' || result.type === 'boolean' || result.type === 'string') {
+  if (
+    result.type === 'number' ||
+    result.type === 'boolean' ||
+    result.type === 'string' ||
+    result.type === 'regex'
+  ) {
     return result.value
   } else if (result.type === 'null') {
     return null

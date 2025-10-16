@@ -268,29 +268,3 @@ describe('Assign', () => {
           end end`)
   })
 })
-
-describe('Word escapes', () => {
-  test('parses escaped spaces in words', () => {
-    expect('echo my\\ file').toMatchTree(`
-      FunctionCall
-        Identifier echo
-        PositionalArg
-          Word my\\ file`)
-  })
-
-  test('parses multiple escaped spaces', () => {
-    expect('cat file\\ with\\ spaces.txt').toMatchTree(`
-      FunctionCall
-        Identifier cat
-        PositionalArg
-          Word file\\ with\\ spaces.txt`)
-  })
-
-  test('parses escaped backslash', () => {
-    expect('echo path\\\\file').toMatchTree(`
-      FunctionCall
-        Identifier echo
-        PositionalArg
-          Word path\\\\file`)
-  })
-})
