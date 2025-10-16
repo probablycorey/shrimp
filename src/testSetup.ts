@@ -4,7 +4,7 @@ import { parser } from '#parser/shrimp'
 import { $ } from 'bun'
 import { assert, assertNever, errorMessage } from '#utils/utils'
 import { Compiler } from '#compiler/compiler'
-import { VM, type Value } from 'reefvm'
+import { run, VM, type Value } from 'reefvm'
 
 const regenerateParser = async () => {
   let generate = true
@@ -33,7 +33,7 @@ declare module 'bun:test' {
     toMatchTree(expected: string): T
     toMatchExpression(expected: string): T
     toFailParse(): T
-    toEvaluateTo(expected: unknown): Promise<T>
+    toEvaluateTo(expected: unknown, nativeFunctions?: Record<string, Function>): Promise<T>
     toFailEvaluation(): Promise<T>
   }
 }
@@ -93,14 +93,16 @@ expect.extend({
     }
   },
 
-  async toEvaluateTo(received: unknown, expected: unknown) {
+  async toEvaluateTo(
+    received: unknown,
+    expected: unknown,
+    nativeFunctions: Record<string, Function> = {}
+  ) {
     assert(typeof received === 'string', 'toEvaluateTo can only be used with string values')
 
     try {
       const compiler = new Compiler(received)
-      const vm = new VM(compiler.bytecode)
-      await vm.run()
-      const result = await vm.run()
+      const result = await run(compiler.bytecode, nativeFunctions)
       let value = VMResultToValue(result)
 
       // Just treat regex as strings for comparison purposes

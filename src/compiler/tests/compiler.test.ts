@@ -212,3 +212,10 @@ describe('Regex', () => {
     expect('//[unclosed//').toFailEvaluation()
   })
 })
+
+describe.only('native functions', () => {
+  test('print function', () => {
+    const add = (x: number, y: number) => x + y
+    expect(`add 5 9`).toEvaluateTo(14, { add })
+  })
+})

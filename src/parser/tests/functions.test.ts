@@ -1,25 +1,8 @@
 import { expect, describe, test } from 'bun:test'
-import { afterEach } from 'bun:test'
-import { resetCommandSource, setCommandSource } from '#editor/commands'
-import { beforeEach } from 'bun:test'
 
 import '../shrimp.grammar' // Importing this so changes cause it to retest!
 
 describe('calling functions', () => {
-  beforeEach(() => {
-    setCommandSource(() => [
-      {
-        command: 'echo',
-        args: [{ name: 'path', type: 'string' }],
-        execute: (p: any) => p,
-      },
-    ])
-  })
-
-  afterEach(() => {
-    resetCommandSource()
-  })
-
   test('call with no args', () => {
     expect('tail').toMatchTree(`
       FunctionCallOrIdentifier
