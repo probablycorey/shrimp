@@ -8,6 +8,7 @@ export const highlighting = styleTags({
   fn: tags.keyword,
   end: tags.keyword,
   ':': tags.keyword,
+  Regex: tags.regexp,
   Operator: tags.operator,
   Command: tags.function(tags.variableName),
   'Params/Identifier': tags.definition(tags.variableName),

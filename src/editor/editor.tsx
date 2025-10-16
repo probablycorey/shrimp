@@ -4,7 +4,7 @@ import { shrimpTheme } from '#editor/plugins/theme'
 import { shrimpLanguage } from '#/editor/plugins/shrimpLanguage'
 import { shrimpHighlighting } from '#editor/plugins/theme'
 import { shrimpKeymap } from '#editor/plugins/keymap'
-import { log, toElement } from '#utils/utils'
+import { asciiEscapeToHtml, log, toElement } from '#utils/utils'
 import { Signal } from '#utils/signal'
 import { shrimpErrors } from '#editor/plugins/errors'
 import { debugTags } from '#editor/plugins/debugTags'
@@ -53,7 +53,7 @@ let outputTimeout: ReturnType<typeof setTimeout>
 
 outputSignal.connect((output) => {
   const el = document.querySelector('#output')!
-  el.textContent = ''
+  el.innerHTML = ''
   let content
   if ('error' in output) {
     el.classList.add('error')
@@ -63,15 +63,7 @@ outputSignal.connect((output) => {
     content = output.output
   }
 
-  clearInterval(outputTimeout)
-  const totalTime = 100
-  const speed = totalTime / content.length
-  let i = 0
-  outputTimeout = setInterval(() => {
-    el.textContent += content[i]
-    i++
-    if (i >= content.length) clearInterval(outputTimeout)
-  }, speed)
+  el.innerHTML = asciiEscapeToHtml(content)
 })
 
 type StatusBarMessage = {

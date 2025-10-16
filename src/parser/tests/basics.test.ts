@@ -2,6 +2,20 @@ import { expect, describe, test } from 'bun:test'
 
 import '../shrimp.grammar' // Importing this so changes cause it to retest!
 
+describe('null', () => {
+  test('parses null', () => {
+    expect('null').toMatchTree(`Null null`)
+  })
+
+  test('parses null in assignments', () => {
+    expect('a = null').toMatchTree(`
+      Assign
+        Identifier a
+        operator =
+        Null null`)
+  })
+})
+
 describe('Identifier', () => {
   test('parses identifiers with emojis and dashes', () => {
     expect('moo-😊-34').toMatchTree(`

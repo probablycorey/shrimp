@@ -1,7 +1,7 @@
 #output {
   flex: 1;
-  background: #40318D;
-  color: #7C70DA;
+  background: var(--bg-output);
+  color: var(--text-output);
   padding: 20px;
   overflow-y: auto;
   white-space: pre-wrap;
@@ -9,20 +9,16 @@
   font-size: 18px;
 }
 
-#output.error {
-  color: #FF6E6E;
-}
-
 #status-bar {
   height: 30px;
-  background: #1E2A4A;
-  color: #B3A9FF55;
+  background: var(--bg-status-bar);
+  color: var(--text-status);
   display: flex;
   align-items: center;
   padding: 0 10px;
   font-size: 14px;
-  border-top: 3px solid #0E1A3A;
-  border-bottom: 3px solid #0E1A3A;
+  border-top: 3px solid var(--bg-status-border);
+  border-bottom: 3px solid var(--bg-status-border);
 
   display: flex;
   justify-content: space-between;
@@ -44,7 +40,7 @@
   }
 
   .active {
-    color: #C3E88D;
+    color: var(--color-string);
   }
 
   .inactive {
@@ -53,5 +49,5 @@
 }
 
 .syntax-error {
-  text-decoration: underline dotted #FF6E6E;
+  text-decoration: underline dotted var(--color-error);
 }

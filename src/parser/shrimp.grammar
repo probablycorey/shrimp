@@ -5,7 +5,7 @@
 @top Program { item* }
 
 @tokens {
-  @precedence { Number "-" RegExp "/"}
+  @precedence { Number "-" Regex "/"}
 
   StringFragment { !['\\$]+ }
   NamedArgPrefix { $[a-z]+ "=" }
@@ -19,7 +19,8 @@
   colon[closedBy="end", @name="colon"] { ":" }
   end[openedBy="colon",  @name="end"] { "end" }
   Underscore { "_" }
-  RegExp { "//" (![/\\\n[] | "\\" ![\n] | "[" (![\n\\\]] | "\\" ![\n])* "]")+ ("//" $[gimsuy]*)? } // Stolen from the lezer JavaScript grammar
+  Null { "null" }
+  Regex { "//" (![/\\\n[] | "\\" ![\n] | "[" (![\n\\\]] | "\\" ![\n])* "]")+ ("//" $[gimsuy]*)? } // Stolen from the lezer JavaScript grammar
   "fn" [@name=keyword]
   "if" [@name=keyword]
   "elsif" [@name=keyword]
@@ -198,7 +199,7 @@ EscapeSeq {
 // to go through ambiguousFunctionCall (which is what we want semantically).
 // Yes, it is annoying and I gave up trying to use GLR to fix it.
 expressionWithoutIdentifier {
-  ParenExpr | Word | String | Number | Boolean | RegExp
+  ParenExpr | Word | String | Number | Boolean | Regex | Null
 }
 
 block {

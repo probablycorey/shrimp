@@ -3,19 +3,20 @@ import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 
 const highlightStyle = HighlightStyle.define([
-  { tag: tags.keyword, color: '#C792EA' },
-  { tag: tags.name, color: '#82AAFF' },
-  { tag: tags.string, color: '#C3E88D' },
-  { tag: tags.number, color: '#F78C6C' },
-  { tag: tags.bool, color: '#FF5370' },
-  { tag: tags.operator, color: '#89DDFF' },
-  { tag: tags.paren, color: '#676E95' },
-  { tag: tags.function(tags.variableName), color: '#FF9CAC' },
+  { tag: tags.keyword, color: 'var(--color-keyword)' },
+  { tag: tags.name, color: 'var(--color-function)' },
+  { tag: tags.string, color: 'var(--color-string)' },
+  { tag: tags.number, color: 'var(--color-number)' },
+  { tag: tags.bool, color: 'var(--color-bool)' },
+  { tag: tags.operator, color: 'var(--color-operator)' },
+  { tag: tags.paren, color: 'var(--color-paren)' },
+  { tag: tags.regexp, color: 'var(--color-regex)' },
+  { tag: tags.function(tags.variableName), color: 'var(--color-function-call)' },
   { tag: tags.function(tags.invalid), color: 'white' },
   {
     tag: tags.definition(tags.variableName),
-    color: '#FFCB6B',
-    backgroundColor: '#1E2A4A',
+    color: 'var(--color-variable-def)',
+    backgroundColor: 'var(--bg-variable-def)',
     padding: '1px 2px',
     borderRadius: '2px',
     fontWeight: '500',
@@ -27,24 +28,24 @@ export const shrimpHighlighting = syntaxHighlighting(highlightStyle)
 export const shrimpTheme = EditorView.theme(
   {
     '&': {
-      color: '#D6DEEB', // Night Owl text color
-      backgroundColor: '#011627', // Night Owl dark blue
+      color: 'var(--text-editor)',
+      backgroundColor: 'var(--bg-editor)',
       height: '100%',
       fontSize: '18px',
     },
     '.cm-content': {
       fontFamily: '"Pixeloid Mono", "Courier New", monospace',
-      caretColor: '#80A4C2', // soft blue caret
+      caretColor: 'var(--caret)',
       padding: '0px',
     },
     '.cm-activeLine': {
       backgroundColor: 'transparent',
     },
     '&.cm-focused .cm-cursor': {
-      borderLeftColor: '#80A4C2',
+      borderLeftColor: 'var(--caret)',
     },
     '&.cm-focused .cm-selectionBackground, ::selection': {
-      backgroundColor: '#1D3B53', // darker blue selection
+      backgroundColor: 'var(--bg-selection)',
     },
     '.cm-gutters': {
       display: 'none',
@@ -55,10 +56,10 @@ export const shrimpTheme = EditorView.theme(
       height: '100%',
     },
     '.cm-matchingBracket': {
-      backgroundColor: '#FF5370',
+      backgroundColor: 'var(--color-bool)',
     },
     '.cm-nonmatchingBracket': {
-      backgroundColor: '#C3E88D',
+      backgroundColor: 'var(--color-string)',
     },
   },
   { dark: true }

@@ -1,3 +1,52 @@
+:root {
+  /* Background colors */
+  --bg-editor: #011627;
+  --bg-output: #40318D;
+  --bg-status-bar: #1E2A4A;
+  --bg-status-border: #0E1A3A;
+  --bg-selection: #1D3B53;
+  --bg-variable-def: #1E2A4A;
+
+  /* Text colors */
+  --text-editor: #D6DEEB;
+  --text-output: #7C70DA;
+  --text-status: #B3A9FF55;
+  --caret: #80A4C2;
+
+  /* Syntax highlighting colors */
+  --color-keyword: #C792EA;
+  --color-function: #82AAFF;
+  --color-string: #C3E88D;
+  --color-number: #F78C6C;
+  --color-bool: #FF5370;
+  --color-operator: #89DDFF;
+  --color-paren: #676E95;
+  --color-function-call: #FF9CAC;
+  --color-variable-def: #FFCB6B;
+  --color-error: #FF6E6E;
+  --color-regex: #E1ACFF;
+
+  /* ANSI terminal colors */
+  --ansi-black: #011627;
+  --ansi-red: #FF5370;
+  --ansi-green: #C3E88D;
+  --ansi-yellow: #FFCB6B;
+  --ansi-blue: #82AAFF;
+  --ansi-magenta: #C792EA;
+  --ansi-cyan: #89DDFF;
+  --ansi-white: #D6DEEB;
+
+  /* ANSI bright colors (slightly more vibrant) */
+  --ansi-bright-black: #676E95;
+  --ansi-bright-red: #FF6E90;
+  --ansi-bright-green: #D4F6A8;
+  --ansi-bright-yellow: #FFE082;
+  --ansi-bright-blue: #A8C7FA;
+  --ansi-bright-magenta: #E1ACFF;
+  --ansi-bright-cyan: #A8F5FF;
+  --ansi-bright-white: #FFFFFF;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -5,8 +54,8 @@
 }
 
 body {
-  background: #40318D;
-  color: #7C70DA;
+  background: var(--bg-output);
+  color: var(--text-output);
   font-family: 'Pixeloid Mono', 'Courier New', monospace;
   font-size: 18px;
   height: 100vh;
@@ -15,7 +64,7 @@ body {
 
 #root {
   height: 100vh;
-  background: #40318D;
+  background: var(--bg-output);
   display: flex;
   flex-direction: column;
 }

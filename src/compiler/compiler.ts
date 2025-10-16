@@ -164,7 +164,11 @@ export class Compiler {
         return [[`PUSH`, value === 'true']]
       }
 
-      case terms.RegExp: {
+      case terms.Null: {
+        return [[`PUSH`, null]]
+      }
+
+      case terms.Regex: {
         // remove the surrounding slashes and any flags
         const [_, pattern, flags] = value.match(/^\/\/(.*)\/\/([gimsuy]*)$/) || []
         if (!pattern) {
@@ -216,6 +220,7 @@ export class Compiler {
         const { identifier, right } = getAssignmentParts(node)
         const instructions: ProgramItem[] = []
         instructions.push(...this.#compileNode(right, input))
+        instructions.push(['DUP']) // Keep a copy on the stack after storing
         const identifierName = input.slice(identifier.from, identifier.to)
         instructions.push(['STORE', identifierName])
 

@@ -39,7 +39,7 @@ describe('compiler', () => {
   })
 
   test('assign number', () => {
-    expect('x = 5; x').toEvaluateTo(5)
+    expect('x = 5').toEvaluateTo(5)
   })
 
   test('emoji assignment to number', () => {
@@ -182,7 +182,7 @@ describe('string interpolation', () => {
     expect(`'price is \\$10'`).toEvaluateTo('price is $10')
   })
 
-  test.only('string with mixed interpolation and escapes', () => {
+  test('string with mixed interpolation and escapes', () => {
     expect(`x = 5; 'value: $x\\ntotal: $(x * 2)'`).toEvaluateTo('value: 5\ntotal: 10')
   })
 
@@ -195,7 +195,7 @@ describe('string interpolation', () => {
   })
 })
 
-describe('RegExp', () => {
+describe('Regex', () => {
   test('simple regex', () => {
     expect('//hello//').toEvaluateTo(/hello/)
   })

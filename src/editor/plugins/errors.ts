@@ -32,7 +32,7 @@ export const shrimpErrors = ViewPlugin.fromClass(
         tree.iterate({
           enter: (node) => {
             if (!node.type.isError) return
-            
+
             // Skip empty error nodes
             if (node.from === node.to) return
 
@@ -45,7 +45,7 @@ export const shrimpErrors = ViewPlugin.fromClass(
         })
 
         this.decorations = Decoration.set(decorations)
-        requestAnimationFrame(() => view.dispatch({}))
+        // requestAnimationFrame(() => view.dispatch({}))
       } catch (e) {
         console.error('🙈 Error parsing document', e)
       }

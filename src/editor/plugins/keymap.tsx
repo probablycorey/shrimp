@@ -1,9 +1,7 @@
-import { outputSignal, statusBarSignal } from '#editor/editor'
+import { statusBarSignal } from '#editor/editor'
+import { run } from '#editor/runCode'
 import { EditorState } from '@codemirror/state'
-import { Compiler } from '#compiler/compiler'
-import { errorMessage, log } from '#utils/utils'
 import { keymap } from '@codemirror/view'
-import { VM } from 'reefvm'
 
 let multilineMode = false
 const customKeymap = keymap.of([
@@ -39,8 +37,18 @@ const customKeymap = keymap.of([
   },
 ])
 
+let firstTime = true
 const singleLineFilter = EditorState.transactionFilter.of((transaction) => {
   if (multilineMode) return transaction // Allow everything in multiline mode
+
+  if (firstTime) {
+    firstTime = false
+    if (transaction.newDoc.toString().includes('\n')) {
+      multilineMode = true
+      updateStatusMessage()
+      return transaction
+    }
+  }
 
   transaction.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
     if (inserted.toString().includes('\n')) {
@@ -74,15 +82,3 @@ const updateStatusMessage = () => {
 }
 
 requestAnimationFrame(() => updateStatusMessage())
-
-const run = async (input: string) => {
-  try {
-    const compiler = new Compiler(input)
-    const vm = new VM(compiler.bytecode)
-    const output = await vm.run()
-    outputSignal.emit({ output: String(output.value) })
-  } catch (error) {
-    log.error(error)
-    outputSignal.emit({ error: `${errorMessage(error)}` })
-  }
-}
