@@ -42,15 +42,12 @@ export class Scope {
 let pendingIdentifiers: string[] = []
 let isInParams = false
 
-// Term ID for 'fn' keyword - verified by parsing and inspecting the tree
-const FN_KEYWORD = 33
-
 export const trackScope = new ContextTracker<Scope>({
   start: new Scope(null, new Set()),
 
   shift(context, term, stack, input) {
     // Track fn keyword to enter param capture mode
-    if (term === FN_KEYWORD) {
+    if (term === terms.Fn) {
       isInParams = true
       pendingIdentifiers = []
       return context
@@ -58,7 +55,17 @@ export const trackScope = new ContextTracker<Scope>({
 
     // Capture identifiers
     if (term === terms.Identifier) {
-      const text = input.read(input.pos, stack.pos)
+      // Build text by peeking backwards from stack.pos to input.pos
+      let text = ''
+      const start = input.pos
+      const end = stack.pos
+      for (let i = start; i < end; i++) {
+        const offset = i - input.pos
+        const ch = input.peek(offset)
+        if (ch === -1) break
+        text += String.fromCharCode(ch)
+      }
+
 
       // Capture ALL identifiers when in params
       if (isInParams) {
@@ -76,7 +83,7 @@ export const trackScope = new ContextTracker<Scope>({
   reduce(context, term, stack, input) {
     // Add assignment variable to scope
     if (term === terms.Assign && pendingIdentifiers.length > 0) {
-      const newContext = context.add(pendingIdentifiers[0])
+      const newContext = context.add(pendingIdentifiers[0]!)
       pendingIdentifiers = []
       return newContext
     }
@@ -100,7 +107,7 @@ export const trackScope = new ContextTracker<Scope>({
     }
 
     // Clear stale identifiers after non-assignment statements
-    if (term === terms.DotGet || term === terms.FunctionCallOrIdentifier) {
+    if (term === terms.DotGet || term === terms.FunctionCallOrIdentifier || term === terms.FunctionCall) {
       pendingIdentifiers = []
     }
 

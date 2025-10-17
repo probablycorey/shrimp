@@ -6,6 +6,14 @@ describe('DotGet', () => {
     expect('readme.txt').toMatchTree(`Word readme.txt`)
   })
 
+  test('readme.txt is Word when used in function', () => {
+    expect('echo readme.txt').toMatchTree(`
+      FunctionCall
+        Identifier echo
+        PositionalArg
+          Word readme.txt`)
+  })
+
   test('obj.prop is DotGet when obj is assigned', () => {
     expect('obj = 5; obj.prop').toMatchTree(`
       Assign
