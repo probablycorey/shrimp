@@ -282,3 +282,40 @@ describe('Assign', () => {
           end end`)
   })
 })
+
+describe('DotGet whitespace sensitivity', () => {
+  test('no whitespace - DotGet works when identifier in scope', () => {
+    expect('basename = 5; basename.prop').toMatchTree(`
+      Assign
+        Identifier basename
+        operator =
+        Number 5
+      DotGet
+        IdentifierBeforeDot basename
+        Identifier prop`)
+  })
+
+  test('space before dot - NOT DotGet, parses as division', () => {
+    expect('basename = 5; basename / prop').toMatchTree(`
+      Assign
+        Identifier basename
+        operator =
+        Number 5
+      BinOp
+        Identifier basename
+        operator /
+        Identifier prop`)
+  })
+
+  test('dot followed by slash is Word, not DotGet', () => {
+    expect('basename ./cool').toMatchTree(`
+      FunctionCall
+        Identifier basename
+        PositionalArg
+          Word ./cool`)
+  })
+
+  test('identifier not in scope with dot becomes Word', () => {
+    expect('readme.txt').toMatchTree(`Word readme.txt`)
+  })
+})

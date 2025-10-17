@@ -13,7 +13,7 @@ describe('DotGet', () => {
         operator =
         Number 5
       DotGet
-        Identifier obj
+        IdentifierBeforeDot obj
         Identifier prop
     `)
   })
@@ -26,7 +26,7 @@ describe('DotGet', () => {
           Identifier config
         colon :
         DotGet
-          Identifier config
+          IdentifierBeforeDot config
           Identifier path
         end end
     `)
@@ -40,7 +40,7 @@ describe('DotGet', () => {
           Identifier x
         colon :
         DotGet
-          Identifier x
+          IdentifierBeforeDot x
           Identifier prop
         end end
       Word x.prop
@@ -59,10 +59,10 @@ end`).toMatchTree(`
           Identifier y
         colon :
         DotGet
-          Identifier x
+          IdentifierBeforeDot x
           Identifier foo
         DotGet
-          Identifier y
+          IdentifierBeforeDot y
           Identifier bar
         end end
     `)
@@ -79,7 +79,7 @@ end`).toMatchTree(`
           Identifier x
         colon :
         DotGet
-          Identifier x
+          IdentifierBeforeDot x
           Identifier outer
         FunctionDef
           keyword fn
@@ -87,7 +87,7 @@ end`).toMatchTree(`
             Identifier y
           colon :
           DotGet
-            Identifier y
+            IdentifierBeforeDot y
             Identifier inner
           end end
         end end
@@ -104,7 +104,7 @@ end`).toMatchTree(`
         Identifier echo
         PositionalArg
           DotGet
-            Identifier config
+            IdentifierBeforeDot config
             Identifier path
     `)
   })
@@ -123,8 +123,18 @@ end`).toMatchTree(`
         Identifier echo
         PositionalArg
           DotGet
-            Identifier config
+            IdentifierBeforeDot config
             Identifier path
     `)
+  })
+
+  test("dot get doesn't work with spaces", () => {
+    expect('obj . prop').toMatchTree(`
+      FunctionCall
+        Identifier obj
+        PositionalArg
+          Word .
+        PositionalArg
+          Identifier prop`)
   })
 })

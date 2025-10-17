@@ -23,7 +23,7 @@
   Underscore { "_" }
   Null { "null" }
   Regex { "//" (![/\\\n[] | "\\" ![\n] | "[" (![\n\\\]] | "\\" ![\n])* "]")+ ("//" $[gimsuy]*)? } // Stolen from the lezer JavaScript grammar
-  "fn" [@name=keyword]
+  Fn[@name=keyword] { "fn" }
   "if" [@name=keyword]
   "elsif" [@name=keyword]
   "else" [@name=keyword]
@@ -43,7 +43,7 @@
 
 }
 
-@external tokens tokenizer from "./tokenizer" { Identifier, Word }
+@external tokens tokenizer from "./tokenizer" { Identifier, Word, IdentifierBeforeDot }
 
 @precedence {
   pipe @left,
@@ -108,11 +108,11 @@ FunctionDef {
 }
 
 singleLineFunctionDef {
-  "fn" Params colon consumeToTerminator end
+  Fn Params colon consumeToTerminator end
 }
 
 multilineFunctionDef {
-  "fn" Params colon newlineOrSemicolon block end
+  Fn Params colon newlineOrSemicolon block end
 }
 
 IfExpr {
@@ -158,10 +158,6 @@ Assign {
   Identifier "=" consumeToTerminator
 }
 
-DotGet {
-  Identifier "." Identifier
-}
-
 BinOp {
   (expression | BinOp) !multiplicative "*" (expression | BinOp) |
   (expression | BinOp) !multiplicative "/" (expression | BinOp) |
@@ -178,8 +174,12 @@ expression {
 }
 
 @skip {} {
+  DotGet {
+    IdentifierBeforeDot "." Identifier
+  }
+
   String { "'" stringContent* "'" }
-  
+
 }
 
 stringContent {
