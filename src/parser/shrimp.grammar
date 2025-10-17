@@ -1,5 +1,7 @@
 @external propSource highlighting from "./highlight"
 
+@context trackScope from "./scopeTracker"
+
 @skip { space }
 
 @top Program { item* }
@@ -60,6 +62,7 @@ item {
 consumeToTerminator {
   PipeExpr |
   ambiguousFunctionCall |
+  PropertyAccess |
   IfExpr |
   FunctionDef |
   Assign |
@@ -153,6 +156,10 @@ Params {
 
 Assign {
   Identifier "=" consumeToTerminator
+}
+
+PropertyAccess {
+  Identifier "." Identifier
 }
 
 BinOp {

@@ -25,8 +25,9 @@ export const
   Underscore = 36,
   NamedArg = 37,
   NamedArgPrefix = 38,
-  IfExpr = 40,
-  ThenBlock = 43,
-  ElsifExpr = 44,
-  ElseExpr = 46,
-  Assign = 48
+  PropertyAccess = 40,
+  IfExpr = 41,
+  ThenBlock = 44,
+  ElsifExpr = 45,
+  ElseExpr = 47,
+  Assign = 49
