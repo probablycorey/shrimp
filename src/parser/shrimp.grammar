@@ -62,7 +62,7 @@ item {
 consumeToTerminator {
   PipeExpr |
   ambiguousFunctionCall |
-  PropertyAccess |
+  DotGet |
   IfExpr |
   FunctionDef |
   Assign |
@@ -158,7 +158,7 @@ Assign {
   Identifier "=" consumeToTerminator
 }
 
-PropertyAccess {
+DotGet {
   Identifier "." Identifier
 }
 

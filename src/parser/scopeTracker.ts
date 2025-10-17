@@ -2,24 +2,15 @@ import { ContextTracker } from '@lezer/lr'
 import * as terms from './shrimp.terms'
 
 export class Scope {
-  constructor(
-    public parent: Scope | null,
-    public vars: Set<string>
-  ) {}
+  constructor(public parent: Scope | null, public vars: Set<string>) {}
 
   has(name: string): boolean {
-    return this.vars.has(name) || (this.parent?.has(name) ?? false)
+    return this.vars.has(name) ?? this.parent?.has(name)
   }
 
-  add(name: string): Scope {
+  add(...names: string[]): Scope {
     const newVars = new Set(this.vars)
-    newVars.add(name)
-    return new Scope(this.parent, newVars)
-  }
-
-  addAll(names: string[]): Scope {
-    const newVars = new Set(this.vars)
-    names.forEach(name => newVars.add(name))
+    names.forEach((name) => newVars.add(name))
     return new Scope(this.parent, newVars)
   }
 
@@ -94,7 +85,7 @@ export const trackScope = new ContextTracker<Scope>({
     if (term === terms.Params) {
       const newScope = context.push()
       if (pendingIdentifiers.length > 0) {
-        const newContext = newScope.addAll(pendingIdentifiers)
+        const newContext = newScope.add(...pendingIdentifiers)
         pendingIdentifiers = []
         isInParams = false
         return newContext
@@ -109,12 +100,12 @@ export const trackScope = new ContextTracker<Scope>({
     }
 
     // Clear stale identifiers after non-assignment statements
-    if (term === terms.PropertyAccess || term === terms.FunctionCallOrIdentifier) {
+    if (term === terms.DotGet || term === terms.FunctionCallOrIdentifier) {
       pendingIdentifiers = []
     }
 
     return context
   },
 
-  hash: (context) => context.hash()
+  hash: (context) => context.hash(),
 })
