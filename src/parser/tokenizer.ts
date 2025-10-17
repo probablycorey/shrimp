@@ -1,5 +1,6 @@
 import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
 import { Identifier, Word } from './shrimp.terms'
+import type { Scope } from './scopeTracker'
 
 // The only chars that can't be words are whitespace, apostrophes, closing parens, and EOF.
 
@@ -13,6 +14,20 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
 
   while (true) {
     ch = getFullCodePoint(input, pos)
+
+    // Check for dot and scope - property access detection
+    if (ch === 46 /* . */ && isValidIdentifier) {
+      const identifierText = input.read(0, pos)
+      const scope = stack.context as Scope | undefined
+
+      if (scope?.has(identifierText)) {
+        // In scope - stop here, let grammar parse property access
+        input.advance(pos)
+        input.acceptToken(Identifier)
+        return
+      }
+      // Not in scope - continue consuming as Word (fall through)
+    }
 
     if (!isWordChar(ch)) break
 
@@ -34,7 +49,7 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
 
   input.advance(pos)
   input.acceptToken(isValidIdentifier ? Identifier : Word)
-})
+}, { contextual: true })
 
 const isWhiteSpace = (ch: number): boolean => {
   return ch === 32 /* space */ || ch === 10 /* \n */ || ch === 9 /* tab */ || ch === 13 /* \r */
