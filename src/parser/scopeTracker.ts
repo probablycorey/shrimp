@@ -43,7 +43,7 @@ let pendingIdentifiers: string[] = []
 let isInParams = false
 
 // Term ID for 'fn' keyword - verified by parsing and inspecting the tree
-const FN_KEYWORD = 32
+const FN_KEYWORD = 33
 
 export const trackScope = new ContextTracker<Scope>({
   start: new Scope(null, new Set()),

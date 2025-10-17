@@ -17,7 +17,7 @@ export const tokenizer = new ExternalTokenizer((input: InputStream, stack: Stack
 
     // Check for dot and scope - property access detection
     if (ch === 46 /* . */ && isValidIdentifier) {
-      const identifierText = input.read(0, pos)
+      const identifierText = input.read(input.pos, input.pos + pos)
       const scope = stack.context as Scope | undefined
 
       if (scope?.has(identifierText)) {
