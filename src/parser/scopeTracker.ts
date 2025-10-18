@@ -1,4 +1,4 @@
-import { ContextTracker } from '@lezer/lr'
+import { ContextTracker, InputStream } from '@lezer/lr'
 import * as terms from './shrimp.terms'
 
 export class Scope {
@@ -47,11 +47,47 @@ export class ScopeContext {
     public scope: Scope,
     public pendingIds: string[] = []
   ) {}
+
+  // Helper to append identifier to pending list
+  withPending(id: string): ScopeContext {
+    return new ScopeContext(this.scope, [...this.pendingIds, id])
+  }
+
+  // Helper to consume last pending identifier and add to scope
+  consumeLast(): ScopeContext {
+    const varName = this.pendingIds.at(-1)
+    if (!varName) return this
+    return new ScopeContext(
+      this.scope.add(varName),
+      this.pendingIds.slice(0, -1)
+    )
+  }
+
+  // Helper to consume all pending identifiers and add to new scope
+  consumeAll(): ScopeContext {
+    const newScope = this.scope.push()
+    return new ScopeContext(
+      this.pendingIds.length > 0 ? newScope.add(...this.pendingIds) : newScope,
+      []
+    )
+  }
+
+  // Helper to clear pending without adding to scope
+  clearPending(): ScopeContext {
+    return new ScopeContext(this.scope, [])
+  }
 }
 
-// Hash function only hashes the scope, not pending state
-const hashScope = (context: ScopeContext): number => {
-  return context.scope.hash()
+// Extract identifier text from input stream
+const readIdentifierText = (input: InputStream, start: number, end: number): string => {
+  let text = ''
+  for (let i = start; i < end; i++) {
+    const offset = i - input.pos
+    const ch = input.peek(offset)
+    if (ch === -1) break
+    text += String.fromCharCode(ch)
+  }
+  return text
 }
 
 export const trackScope = new ContextTracker<ScopeContext>({
@@ -60,47 +96,18 @@ export const trackScope = new ContextTracker<ScopeContext>({
   shift(context, term, stack, input) {
     // Only capture AssignableIdentifier tokens
     if (term === terms.AssignableIdentifier) {
-      // Build text by peeking backwards from stack.pos to input.pos
-      let text = ''
-      const start = input.pos
-      const end = stack.pos
-      for (let i = start; i < end; i++) {
-        const offset = i - input.pos
-        const ch = input.peek(offset)
-        if (ch === -1) break
-        text += String.fromCharCode(ch)
-      }
-
-      return new ScopeContext(
-        context.scope,
-        [...context.pendingIds, text]
-      )
+      const text = readIdentifierText(input, input.pos, stack.pos)
+      return context.withPending(text)
     }
-
     return context
   },
 
-  reduce(context, term, stack, input) {
+  reduce(context, term) {
     // Add assignment variable to scope
-    if (term === terms.Assign && context.pendingIds.length > 0) {
-      // Pop the last identifier (most recent AssignableIdentifier)
-      const varName = context.pendingIds[context.pendingIds.length - 1]!
-      return new ScopeContext(
-        context.scope.add(varName),
-        context.pendingIds.slice(0, -1)
-      )
-    }
+    if (term === terms.Assign) return context.consumeLast()
 
     // Push new scope and add all parameters
-    if (term === terms.Params) {
-      const newScope = context.scope.push()
-      return new ScopeContext(
-        context.pendingIds.length > 0
-          ? newScope.add(...context.pendingIds)
-          : newScope,
-        []  // Clear all pending after consuming
-      )
-    }
+    if (term === terms.Params) return context.consumeAll()
 
     // Pop scope when exiting function
     if (term === terms.FunctionDef) {
@@ -110,5 +117,5 @@ export const trackScope = new ContextTracker<ScopeContext>({
     return context
   },
 
-  hash: hashScope,
+  hash: (context) => context.scope.hash(),
 })
