@@ -1,6 +1,6 @@
 import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
 import { Identifier, AssignableIdentifier, Word, IdentifierBeforeDot } from './shrimp.terms'
-import type { Scope } from './scopeTracker'
+import type { ScopeContext } from './scopeTracker'
 
 // The only chars that can't be words are whitespace, apostrophes, closing parens, and EOF.
 
@@ -36,7 +36,8 @@ export const tokenizer = new ExternalTokenizer(
           identifierText += String.fromCharCode(charCode)
         }
 
-        const scope = stack.context as Scope | undefined
+        const scopeContext = stack.context as ScopeContext | undefined
+        const scope = scopeContext?.scope
 
         if (scope?.has(identifierText)) {
           // In scope - stop here, let grammar parse property access

@@ -42,7 +42,7 @@ export class Scope {
 }
 
 // Wrapper that adds temporary state for identifier capture
-class ScopeContext {
+export class ScopeContext {
   constructor(
     public scope: Scope,
     public pendingIds: string[] = []
@@ -54,17 +54,12 @@ const hashScope = (context: ScopeContext): number => {
   return context.scope.hash()
 }
 
-export const trackScope = new ContextTracker<Scope>({
-  start: new Scope(null, new Set(), [], false),
+export const trackScope = new ContextTracker<ScopeContext>({
+  start: new ScopeContext(new Scope(null, new Set())),
 
   shift(context, term, stack, input) {
-    // Track fn keyword to enter param capture mode
-    if (term === terms.Fn) {
-      return context.withIsInParams(true).withPendingIdentifiers([])
-    }
-
-    // Capture identifiers
-    if (term === terms.Identifier) {
+    // Only capture AssignableIdentifier tokens
+    if (term === terms.AssignableIdentifier) {
       // Build text by peeking backwards from stack.pos to input.pos
       let text = ''
       const start = input.pos
@@ -76,14 +71,10 @@ export const trackScope = new ContextTracker<Scope>({
         text += String.fromCharCode(ch)
       }
 
-      // Capture ALL identifiers when in params
-      if (context.isInParams) {
-        return context.withPendingIdentifiers([...context.pendingIdentifiers, text])
-      }
-      // Capture FIRST identifier for assignments
-      else if (context.pendingIdentifiers.length === 0) {
-        return context.withPendingIdentifiers([text])
-      }
+      return new ScopeContext(
+        context.scope,
+        [...context.pendingIds, text]
+      )
     }
 
     return context
@@ -91,31 +82,33 @@ export const trackScope = new ContextTracker<Scope>({
 
   reduce(context, term, stack, input) {
     // Add assignment variable to scope
-    if (term === terms.Assign && context.pendingIdentifiers.length > 0) {
-      return context.add(context.pendingIdentifiers[0]!)
+    if (term === terms.Assign && context.pendingIds.length > 0) {
+      // Pop the last identifier (most recent AssignableIdentifier)
+      const varName = context.pendingIds[context.pendingIds.length - 1]!
+      return new ScopeContext(
+        context.scope.add(varName),
+        context.pendingIds.slice(0, -1)
+      )
     }
 
-    // Push new scope and add parameters
+    // Push new scope and add all parameters
     if (term === terms.Params) {
-      const newScope = context.push()
-      if (context.pendingIdentifiers.length > 0) {
-        return newScope.add(...context.pendingIdentifiers).withIsInParams(false)
-      }
-      return newScope.withIsInParams(false)
+      const newScope = context.scope.push()
+      return new ScopeContext(
+        context.pendingIds.length > 0
+          ? newScope.add(...context.pendingIds)
+          : newScope,
+        []  // Clear all pending after consuming
+      )
     }
 
     // Pop scope when exiting function
     if (term === terms.FunctionDef) {
-      return context.pop()
-    }
-
-    // Clear stale identifiers after non-assignment statements
-    if (term === terms.DotGet || term === terms.FunctionCallOrIdentifier || term === terms.FunctionCall) {
-      return context.clearPending()
+      return new ScopeContext(context.scope.pop(), [])
     }
 
     return context
   },
 
-  hash: (context) => context.hash(),
+  hash: hashScope,
 })
