@@ -195,6 +195,18 @@ function parseExpression(input: string) {
 
 **Expression-oriented design**: Everything returns a value - commands, assignments, functions. This enables composition and functional patterns.
 
+**Scope-aware property access (DotGet)**: The parser uses Lezer's `@context` feature to track variable scope at parse time. When it encounters `obj.prop`, it checks if `obj` is in scope:
+- **In scope** → Parses as `DotGet(Identifier, Identifier)` → compiles to `TRY_LOAD obj; PUSH 'prop'; DOT_GET`
+- **Not in scope** → Parses as `Word("obj.prop")` → compiles to `PUSH 'obj.prop'` (treated as file path/string)
+
+Implementation files:
+- **src/parser/scopeTracker.ts**: ContextTracker that maintains immutable scope chain
+- **src/parser/tokenizer.ts**: External tokenizer checks `stack.context` to decide if dot creates DotGet or Word
+- Scope tracking: Captures variables from assignments (`x = 5`) and function parameters (`fn x:`)
+- See `src/parser/tests/dot-get.test.ts` for comprehensive examples
+
+**Why this matters**: This enables shell-like file paths (`readme.txt`) while supporting dictionary/array access (`config.path`) without quotes, determined entirely at parse time based on lexical scope.
+
 **EOF handling**: The grammar uses `(statement | newlineOrSemicolon)+ eof?` to handle empty lines and end-of-file without infinite loops.
 
 ## Compiler Architecture

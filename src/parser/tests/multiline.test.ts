@@ -21,16 +21,16 @@ describe('multiline', () => {
       add 3 4
     `).toMatchTree(`
       Assign
-        Identifier add
+        AssignableIdentifier add
         operator =
         FunctionDef
           keyword fn
           Params
-            Identifier a
-            Identifier b
+            AssignableIdentifier a
+            AssignableIdentifier b
           colon :
           Assign
-            Identifier result
+            AssignableIdentifier result
             operator =
             BinOp
               Identifier a
@@ -63,8 +63,8 @@ end
       FunctionDef
         keyword fn
         Params
-          Identifier x
-          Identifier y
+          AssignableIdentifier x
+          AssignableIdentifier y
         colon :
         FunctionCallOrIdentifier
           Identifier x

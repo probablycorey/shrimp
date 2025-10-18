@@ -17,7 +17,7 @@ describe('DotGet', () => {
   test('obj.prop is DotGet when obj is assigned', () => {
     expect('obj = 5; obj.prop').toMatchTree(`
       Assign
-        Identifier obj
+        AssignableIdentifier obj
         operator =
         Number 5
       DotGet
@@ -31,7 +31,7 @@ describe('DotGet', () => {
       FunctionDef
         keyword fn
         Params
-          Identifier config
+          AssignableIdentifier config
         colon :
         DotGet
           IdentifierBeforeDot config
@@ -45,7 +45,7 @@ describe('DotGet', () => {
       FunctionDef
         keyword fn
         Params
-          Identifier x
+          AssignableIdentifier x
         colon :
         DotGet
           IdentifierBeforeDot x
@@ -63,8 +63,8 @@ end`).toMatchTree(`
       FunctionDef
         keyword fn
         Params
-          Identifier x
-          Identifier y
+          AssignableIdentifier x
+          AssignableIdentifier y
         colon :
         DotGet
           IdentifierBeforeDot x
@@ -84,7 +84,7 @@ end`).toMatchTree(`
       FunctionDef
         keyword fn
         Params
-          Identifier x
+          AssignableIdentifier x
         colon :
         DotGet
           IdentifierBeforeDot x
@@ -92,7 +92,7 @@ end`).toMatchTree(`
         FunctionDef
           keyword fn
           Params
-            Identifier y
+            AssignableIdentifier y
           colon :
           DotGet
             IdentifierBeforeDot y
@@ -105,7 +105,7 @@ end`).toMatchTree(`
   test('dot get works as function argument', () => {
     expect('config = 42; echo config.path').toMatchTree(`
       Assign
-        Identifier config
+        AssignableIdentifier config
         operator =
         Number 42
       FunctionCall
@@ -120,7 +120,7 @@ end`).toMatchTree(`
   test('mixed file paths and dot get', () => {
     expect('config = 42; cat readme.txt; echo config.path').toMatchTree(`
       Assign
-        Identifier config
+        AssignableIdentifier config
         operator =
         Number 42
       FunctionCall

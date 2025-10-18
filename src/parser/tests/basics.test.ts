@@ -10,7 +10,7 @@ describe('null', () => {
   test('parses null in assignments', () => {
     expect('a = null').toMatchTree(`
       Assign
-        Identifier a
+        AssignableIdentifier a
         operator =
         Null null`)
   })
@@ -212,11 +212,11 @@ describe('newlines', () => {
     expect(`x = 5
 y = 2`).toMatchTree(`
       Assign
-        Identifier x
+        AssignableIdentifier x
         operator =
         Number 5
       Assign
-        Identifier y
+        AssignableIdentifier y
         operator =
         Number 2`)
   })
@@ -224,11 +224,11 @@ y = 2`).toMatchTree(`
   test('parses statements separated by semicolons', () => {
     expect(`x = 5; y = 2`).toMatchTree(`
       Assign
-        Identifier x
+        AssignableIdentifier x
         operator =
         Number 5
       Assign
-        Identifier y
+        AssignableIdentifier y
         operator =
         Number 2`)
   })
@@ -236,7 +236,7 @@ y = 2`).toMatchTree(`
   test('parses statement with word and a semicolon', () => {
     expect(`a = hello; 2`).toMatchTree(`
       Assign
-        Identifier a
+        AssignableIdentifier a
         operator =
         FunctionCallOrIdentifier
           Identifier hello
@@ -248,7 +248,7 @@ describe('Assign', () => {
   test('parses simple assignment', () => {
     expect('x = 5').toMatchTree(`
       Assign
-        Identifier x
+        AssignableIdentifier x
         operator =
         Number 5`)
   })
@@ -256,7 +256,7 @@ describe('Assign', () => {
   test('parses assignment with addition', () => {
     expect('x = 5 + 3').toMatchTree(`
       Assign
-        Identifier x
+        AssignableIdentifier x
         operator =
         BinOp
           Number 5
@@ -267,13 +267,13 @@ describe('Assign', () => {
   test('parses assignment with functions', () => {
     expect('add = fn a b: a + b end').toMatchTree(`
       Assign
-        Identifier add
+        AssignableIdentifier add
         operator =
         FunctionDef
           keyword fn
           Params
-            Identifier a
-            Identifier b
+            AssignableIdentifier a
+            AssignableIdentifier b
           colon :
           BinOp
             Identifier a
@@ -287,7 +287,7 @@ describe('DotGet whitespace sensitivity', () => {
   test('no whitespace - DotGet works when identifier in scope', () => {
     expect('basename = 5; basename.prop').toMatchTree(`
       Assign
-        Identifier basename
+        AssignableIdentifier basename
         operator =
         Number 5
       DotGet
@@ -298,7 +298,7 @@ describe('DotGet whitespace sensitivity', () => {
   test('space before dot - NOT DotGet, parses as division', () => {
     expect('basename = 5; basename / prop').toMatchTree(`
       Assign
-        Identifier basename
+        AssignableIdentifier basename
         operator =
         Number 5
       BinOp

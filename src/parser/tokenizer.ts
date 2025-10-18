@@ -7,7 +7,6 @@ import type { ScopeContext } from './scopeTracker'
 export const tokenizer = new ExternalTokenizer(
   (input: InputStream, stack: Stack) => {
     let ch = getFullCodePoint(input, 0)
-    console.log(`🌭 checking char ${String.fromCodePoint(ch)}`)
     if (!isWordChar(ch)) return
 
     let pos = getCharSize(ch)
@@ -66,13 +65,55 @@ export const tokenizer = new ExternalTokenizer(
       pos += getCharSize(ch)
     }
 
+    // Build identifier text BEFORE advancing (for debug and peek-ahead)
+    let identifierText = ''
+    if (isValidIdentifier) {
+      for (let i = 0; i < pos; i++) {
+        const charCode = input.peek(i)
+        if (charCode === -1) break
+        if (charCode >= 0xd800 && charCode <= 0xdbff && i + 1 < pos) {
+          const low = input.peek(i + 1)
+          if (low >= 0xdc00 && low <= 0xdfff) {
+            identifierText += String.fromCharCode(charCode, low)
+            i++
+            continue
+          }
+        }
+        identifierText += String.fromCharCode(charCode)
+      }
+    }
+
     input.advance(pos)
     if (isValidIdentifier) {
-      // Use canShift to decide which identifier type
-      if (stack.canShift(AssignableIdentifier)) {
+      const canAssignable = stack.canShift(AssignableIdentifier)
+      const canRegular = stack.canShift(Identifier)
+
+      if (canAssignable && !canRegular) {
+        // Only AssignableIdentifier valid (e.g., in Params)
         input.acceptToken(AssignableIdentifier)
-      } else {
+      } else if (canRegular && !canAssignable) {
+        // Only Identifier valid (e.g., in function args)
         input.acceptToken(Identifier)
+      } else {
+        // BOTH possible (ambiguous) - peek ahead for '='
+        // Note: we're peeking from current position (after advance), so start at 0
+        let peekPos = 0
+        // Skip whitespace (space, tab, CR, but NOT newline - assignment must be on same line)
+        while (true) {
+          const ch = getFullCodePoint(input, peekPos)
+          if (ch === 32 || ch === 9 || ch === 13) { // space, tab, CR
+            peekPos += getCharSize(ch)
+          } else {
+            break
+          }
+        }
+        // Check if next non-whitespace char is '='
+        const nextCh = getFullCodePoint(input, peekPos)
+        if (nextCh === 61 /* = */) {
+          input.acceptToken(AssignableIdentifier)
+        } else {
+          input.acceptToken(Identifier)
+        }
       }
     } else {
       input.acceptToken(Word)

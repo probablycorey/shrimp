@@ -72,7 +72,7 @@ describe('Fn', () => {
       FunctionDef
         keyword fn
         Params
-          Identifier x
+          AssignableIdentifier x
         colon :
         BinOp
           Identifier x
@@ -86,8 +86,8 @@ describe('Fn', () => {
       FunctionDef
         keyword fn
         Params
-          Identifier x
-          Identifier y
+          AssignableIdentifier x
+          AssignableIdentifier y
         colon :
         BinOp
           Identifier x
@@ -104,8 +104,8 @@ end`).toMatchTree(`
       FunctionDef
         keyword fn
         Params
-          Identifier x
-          Identifier y
+          AssignableIdentifier x
+          AssignableIdentifier y
         colon :
         BinOp
           Identifier x

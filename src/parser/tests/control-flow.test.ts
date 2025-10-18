@@ -19,7 +19,7 @@ describe('if/elsif/else', () => {
 
     expect('a = if x: 2').toMatchTree(`
       Assign
-        Identifier a
+        AssignableIdentifier a
         operator =
         IfExpr
           keyword if

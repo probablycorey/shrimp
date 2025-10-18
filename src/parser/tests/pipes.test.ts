@@ -50,7 +50,7 @@ describe('pipe expressions', () => {
   test('pipe expression in assignment', () => {
     expect('result = echo hello | grep h').toMatchTree(`
       Assign
-        Identifier result
+        AssignableIdentifier result
         operator =
         PipeExpr
           FunctionCall
@@ -77,7 +77,7 @@ describe('pipe expressions', () => {
             FunctionDef
               keyword fn
               Params
-                Identifier x
+                AssignableIdentifier x
               colon :
               FunctionCallOrIdentifier
                 Identifier x

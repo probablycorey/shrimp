@@ -9,6 +9,7 @@ import {
   getAllChildren,
   getAssignmentParts,
   getBinaryParts,
+  getDotGetParts,
   getFunctionCallParts,
   getFunctionDefParts,
   getIfExprParts,
@@ -17,8 +18,8 @@ import {
   getStringParts,
 } from '#compiler/utils'
 
-// const DEBUG = false
-const DEBUG = true
+const DEBUG = false
+// const DEBUG = true
 
 type Label = `.${string}`
 
@@ -187,6 +188,19 @@ export class Compiler {
 
       case terms.Identifier: {
         return [[`TRY_LOAD`, value]]
+      }
+
+      case terms.Word: {
+        return [['PUSH', value]]
+      }
+
+      case terms.DotGet: {
+        const { objectName, propertyName } = getDotGetParts(node, input)
+        const instructions: ProgramItem[] = []
+        instructions.push(['TRY_LOAD', objectName])
+        instructions.push(['PUSH', propertyName])
+        instructions.push(['DOT_GET'])
+        return instructions
       }
 
       case terms.BinOp: {

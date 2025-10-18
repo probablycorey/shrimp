@@ -40,9 +40,9 @@ export const getAssignmentParts = (node: SyntaxNode) => {
   const children = getAllChildren(node)
   const [left, equals, right] = children
 
-  if (!left || left.type.id !== terms.Identifier) {
+  if (!left || left.type.id !== terms.AssignableIdentifier) {
     throw new CompilerError(
-      `Assign left child must be an Identifier, got ${left ? left.type.name : 'none'}`,
+      `Assign left child must be an AssignableIdentifier, got ${left ? left.type.name : 'none'}`,
       node.from,
       node.to
     )
@@ -70,9 +70,9 @@ export const getFunctionDefParts = (node: SyntaxNode, input: string) => {
   }
 
   const paramNames = getAllChildren(paramsNode).map((param) => {
-    if (param.type.id !== terms.Identifier) {
+    if (param.type.id !== terms.AssignableIdentifier) {
       throw new CompilerError(
-        `FunctionDef params must be Identifiers, got ${param.type.name}`,
+        `FunctionDef params must be AssignableIdentifiers, got ${param.type.name}`,
         param.from,
         param.to
       )
@@ -197,4 +197,38 @@ export const getStringParts = (node: SyntaxNode, input: string) => {
   })
 
   return { parts, hasInterpolation: parts.length > 0 }
+}
+
+export const getDotGetParts = (node: SyntaxNode, input: string) => {
+  const children = getAllChildren(node)
+  const [object, property] = children
+
+  if (children.length !== 2) {
+    throw new CompilerError(
+      `DotGet expected 2 identifier children, got ${children.length}`,
+      node.from,
+      node.to
+    )
+  }
+
+  if (object.type.id !== terms.IdentifierBeforeDot) {
+    throw new CompilerError(
+      `DotGet object must be an IdentifierBeforeDot, got ${object.type.name}`,
+      object.from,
+      object.to
+    )
+  }
+
+  if (property.type.id !== terms.Identifier) {
+    throw new CompilerError(
+      `DotGet property must be an Identifier, got ${property.type.name}`,
+      property.from,
+      property.to
+    )
+  }
+
+  const objectName = input.slice(object.from, object.to)
+  const propertyName = input.slice(property.from, property.to)
+
+  return { objectName, propertyName }
 }

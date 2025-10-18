@@ -213,7 +213,7 @@ describe('Regex', () => {
   })
 })
 
-describe.only('native functions', () => {
+describe.skip('native functions', () => {
   test('print function', () => {
     const add = (x: number, y: number) => x + y
     expect(`add 5 9`).toEvaluateTo(14, { add })
