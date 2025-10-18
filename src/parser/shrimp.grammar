@@ -43,7 +43,7 @@
 
 }
 
-@external tokens tokenizer from "./tokenizer" { Identifier, Word, IdentifierBeforeDot }
+@external tokens tokenizer from "./tokenizer" { Identifier, AssignableIdentifier, Word, IdentifierBeforeDot }
 
 @precedence {
   pipe @left,
@@ -151,11 +151,11 @@ ConditionalOp {
 }
 
 Params {
-  Identifier*
+  AssignableIdentifier*
 }
 
 Assign {
-  Identifier "=" consumeToTerminator
+  AssignableIdentifier "=" consumeToTerminator
 }
 
 BinOp {
