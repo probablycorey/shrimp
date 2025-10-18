@@ -4,39 +4,25 @@ import * as terms from './shrimp.terms'
 export class Scope {
   constructor(
     public parent: Scope | null,
-    public vars: Set<string>,
-    public pendingIdentifiers: string[] = [],
-    public isInParams: boolean = false
+    public vars: Set<string>
   ) {}
 
   has(name: string): boolean {
-    return this.vars.has(name) ?? this.parent?.has(name)
+    return this.vars.has(name) || (this.parent?.has(name) ?? false)
   }
 
   add(...names: string[]): Scope {
     const newVars = new Set(this.vars)
-    names.forEach((name) => newVars.add(name))
-    return new Scope(this.parent, newVars, [], this.isInParams)
+    names.forEach(name => newVars.add(name))
+    return new Scope(this.parent, newVars)
   }
 
   push(): Scope {
-    return new Scope(this, new Set(), [], false)
+    return new Scope(this, new Set())
   }
 
   pop(): Scope {
-    return this.parent ?? new Scope(null, new Set(), [], false)
-  }
-
-  withPendingIdentifiers(ids: string[]): Scope {
-    return new Scope(this.parent, this.vars, ids, this.isInParams)
-  }
-
-  withIsInParams(value: boolean): Scope {
-    return new Scope(this.parent, this.vars, this.pendingIdentifiers, value)
-  }
-
-  clearPending(): Scope {
-    return new Scope(this.parent, this.vars, [], this.isInParams)
+    return this.parent ?? this
   }
 
   hash(): number {
@@ -51,10 +37,6 @@ export class Scope {
       h = (h << 5) - h + this.parent.hash()
       h |= 0
     }
-    // Include pendingIdentifiers and isInParams in hash
-    h = (h << 5) - h + this.pendingIdentifiers.length
-    h = (h << 5) - h + (this.isInParams ? 1 : 0)
-    h |= 0
     return h
   }
 }
