@@ -41,6 +41,19 @@ export class Scope {
   }
 }
 
+// Wrapper that adds temporary state for identifier capture
+class ScopeContext {
+  constructor(
+    public scope: Scope,
+    public pendingIds: string[] = []
+  ) {}
+}
+
+// Hash function only hashes the scope, not pending state
+const hashScope = (context: ScopeContext): number => {
+  return context.scope.hash()
+}
+
 export const trackScope = new ContextTracker<Scope>({
   start: new Scope(null, new Set(), [], false),
 
