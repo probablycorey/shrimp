@@ -1,5 +1,5 @@
 import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
-import { Identifier, Word, IdentifierBeforeDot } from './shrimp.terms'
+import { Identifier, AssignableIdentifier, Word, IdentifierBeforeDot } from './shrimp.terms'
 import type { Scope } from './scopeTracker'
 
 // The only chars that can't be words are whitespace, apostrophes, closing parens, and EOF.
@@ -66,7 +66,16 @@ export const tokenizer = new ExternalTokenizer(
     }
 
     input.advance(pos)
-    input.acceptToken(isValidIdentifier ? Identifier : Word)
+    if (isValidIdentifier) {
+      // Use canShift to decide which identifier type
+      if (stack.canShift(AssignableIdentifier)) {
+        input.acceptToken(AssignableIdentifier)
+      } else {
+        input.acceptToken(Identifier)
+      }
+    } else {
+      input.acceptToken(Word)
+    }
   },
   { contextual: true }
 )
