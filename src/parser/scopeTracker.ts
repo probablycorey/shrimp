@@ -2,23 +2,20 @@ import { ContextTracker, InputStream } from '@lezer/lr'
 import * as terms from './shrimp.terms'
 
 export class Scope {
-  constructor(
-    public parent: Scope | null,
-    public vars: Set<string>
-  ) {}
+  constructor(public parent: Scope | null, public vars = new Set<string>()) {}
 
   has(name: string): boolean {
-    return this.vars.has(name) || (this.parent?.has(name) ?? false)
+    return this.vars.has(name) ?? this.parent?.has(name)
   }
 
   add(...names: string[]): Scope {
     const newVars = new Set(this.vars)
-    names.forEach(name => newVars.add(name))
+    names.forEach((name) => newVars.add(name))
     return new Scope(this.parent, newVars)
   }
 
   push(): Scope {
-    return new Scope(this, new Set())
+    return new Scope(this)
   }
 
   pop(): Scope {
@@ -43,10 +40,7 @@ export class Scope {
 
 // Wrapper that adds temporary state for identifier capture
 export class ScopeContext {
-  constructor(
-    public scope: Scope,
-    public pendingIds: string[] = []
-  ) {}
+  constructor(public scope: Scope, public pendingIds: string[] = []) {}
 
   // Helper to append identifier to pending list
   withPending(id: string): ScopeContext {
@@ -57,24 +51,19 @@ export class ScopeContext {
   consumeLast(): ScopeContext {
     const varName = this.pendingIds.at(-1)
     if (!varName) return this
-    return new ScopeContext(
-      this.scope.add(varName),
-      this.pendingIds.slice(0, -1)
-    )
+    return new ScopeContext(this.scope.add(varName), this.pendingIds.slice(0, -1))
   }
 
   // Helper to consume all pending identifiers and add to new scope
   consumeAll(): ScopeContext {
-    const newScope = this.scope.push()
-    return new ScopeContext(
-      this.pendingIds.length > 0 ? newScope.add(...this.pendingIds) : newScope,
-      []
-    )
+    let newScope = this.scope.push()
+    newScope = this.pendingIds.length > 0 ? newScope.add(...this.pendingIds) : newScope
+    return new ScopeContext(newScope)
   }
 
   // Helper to clear pending without adding to scope
   clearPending(): ScopeContext {
-    return new ScopeContext(this.scope, [])
+    return new ScopeContext(this.scope)
   }
 }
 
@@ -94,24 +83,19 @@ export const trackScope = new ContextTracker<ScopeContext>({
   start: new ScopeContext(new Scope(null, new Set())),
 
   shift(context, term, stack, input) {
-    // Only capture AssignableIdentifier tokens
-    if (term === terms.AssignableIdentifier) {
-      const text = readIdentifierText(input, input.pos, stack.pos)
-      return context.withPending(text)
-    }
-    return context
+    if (term !== terms.AssignableIdentifier) return context
+
+    const text = readIdentifierText(input, input.pos, stack.pos)
+    return context.withPending(text)
   },
 
   reduce(context, term) {
-    // Add assignment variable to scope
     if (term === terms.Assign) return context.consumeLast()
-
-    // Push new scope and add all parameters
     if (term === terms.Params) return context.consumeAll()
 
     // Pop scope when exiting function
     if (term === terms.FunctionDef) {
-      return new ScopeContext(context.scope.pop(), [])
+      return new ScopeContext(context.scope.pop())
     }
 
     return context

@@ -6,115 +6,43 @@ import type { ScopeContext } from './scopeTracker'
 
 export const tokenizer = new ExternalTokenizer(
   (input: InputStream, stack: Stack) => {
-    let ch = getFullCodePoint(input, 0)
+    const ch = getFullCodePoint(input, 0)
     if (!isWordChar(ch)) return
 
-    let pos = getCharSize(ch)
-    let isValidIdentifier = isLowercaseLetter(ch) || isEmoji(ch)
+    const isValidStart = isLowercaseLetter(ch) || isEmoji(ch)
     const canBeWord = stack.canShift(Word)
 
-    while (true) {
-      ch = getFullCodePoint(input, pos)
+    // Consume all word characters, tracking if it remains a valid identifier
+    const { pos, isValidIdentifier, stoppedAtDot } = consumeWordToken(
+      input,
+      isValidStart,
+      canBeWord
+    )
 
-      // Check for dot and scope - property access detection
-      if (ch === 46 /* . */ && isValidIdentifier) {
-        // Build identifier text by peeking character by character
-        let identifierText = ''
-        for (let i = 0; i < pos; i++) {
-          const charCode = input.peek(i)
-          if (charCode === -1) break
-          // Handle surrogate pairs for emoji
-          if (charCode >= 0xd800 && charCode <= 0xdbff && i + 1 < pos) {
-            const low = input.peek(i + 1)
-            if (low >= 0xdc00 && low <= 0xdfff) {
-              identifierText += String.fromCharCode(charCode, low)
-              i++ // Skip the low surrogate
-              continue
-            }
-          }
-          identifierText += String.fromCharCode(charCode)
-        }
+    // Check if we should emit IdentifierBeforeDot for property access
+    if (stoppedAtDot) {
+      const dotGetToken = checkForDotGet(input, stack, pos)
 
-        const scopeContext = stack.context as ScopeContext | undefined
-        const scope = scopeContext?.scope
-
-        if (scope?.has(identifierText)) {
-          // In scope - stop here, let grammar parse property access
-          input.advance(pos)
-          input.acceptToken(IdentifierBeforeDot)
-          return
-        }
-        // Not in scope - continue consuming as Word (fall through)
-      }
-
-      if (!isWordChar(ch)) break
-
-      // Certain characters might end a word or identifier if they are followed by whitespace.
-      // This allows things like `a = hello; 2` of if `x: y` to parse correctly.
-      if (canBeWord && (ch === 59 /* ; */ || ch === 58) /* : */) {
-        const nextCh = getFullCodePoint(input, pos + 1)
-        if (!isWordChar(nextCh)) break
-      }
-
-      // Track identifier validity
-      if (!isLowercaseLetter(ch) && !isDigit(ch) && ch !== 45 && !isEmoji(ch)) {
-        if (!canBeWord) break
-        isValidIdentifier = false
-      }
-
-      pos += getCharSize(ch)
-    }
-
-    // Build identifier text BEFORE advancing (for debug and peek-ahead)
-    let identifierText = ''
-    if (isValidIdentifier) {
-      for (let i = 0; i < pos; i++) {
-        const charCode = input.peek(i)
-        if (charCode === -1) break
-        if (charCode >= 0xd800 && charCode <= 0xdbff && i + 1 < pos) {
-          const low = input.peek(i + 1)
-          if (low >= 0xdc00 && low <= 0xdfff) {
-            identifierText += String.fromCharCode(charCode, low)
-            i++
-            continue
-          }
-        }
-        identifierText += String.fromCharCode(charCode)
-      }
-    }
-
-    input.advance(pos)
-    if (isValidIdentifier) {
-      const canAssignable = stack.canShift(AssignableIdentifier)
-      const canRegular = stack.canShift(Identifier)
-
-      if (canAssignable && !canRegular) {
-        // Only AssignableIdentifier valid (e.g., in Params)
-        input.acceptToken(AssignableIdentifier)
-      } else if (canRegular && !canAssignable) {
-        // Only Identifier valid (e.g., in function args)
-        input.acceptToken(Identifier)
+      if (dotGetToken) {
+        input.advance(pos)
+        input.acceptToken(dotGetToken)
       } else {
-        // BOTH possible (ambiguous) - peek ahead for '='
-        // Note: we're peeking from current position (after advance), so start at 0
-        let peekPos = 0
-        // Skip whitespace (space, tab, CR, but NOT newline - assignment must be on same line)
-        while (true) {
-          const ch = getFullCodePoint(input, peekPos)
-          if (ch === 32 || ch === 9 || ch === 13) { // space, tab, CR
-            peekPos += getCharSize(ch)
-          } else {
-            break
-          }
-        }
-        // Check if next non-whitespace char is '='
-        const nextCh = getFullCodePoint(input, peekPos)
-        if (nextCh === 61 /* = */) {
-          input.acceptToken(AssignableIdentifier)
-        } else {
-          input.acceptToken(Identifier)
-        }
+        // Not in scope - continue consuming the dot as part of the word
+        const afterDot = consumeRestOfWord(input, pos + 1, canBeWord)
+        input.advance(afterDot)
+        input.acceptToken(Word)
       }
+
+      return
+    }
+
+    // Advance past the token we consumed
+    input.advance(pos)
+
+    // Choose which token to emit
+    if (isValidIdentifier) {
+      const token = chooseIdentifierToken(input, stack)
+      input.acceptToken(token)
     } else {
       input.acceptToken(Word)
     }
@@ -122,15 +50,134 @@ export const tokenizer = new ExternalTokenizer(
   { contextual: true }
 )
 
+// Build identifier text from input stream, handling surrogate pairs for emoji
+const buildIdentifierText = (input: InputStream, length: number): string => {
+  let text = ''
+  for (let i = 0; i < length; i++) {
+    const charCode = input.peek(i)
+    if (charCode === -1) break
+
+    // Handle surrogate pairs for emoji (UTF-16 encoding)
+    if (charCode >= 0xd800 && charCode <= 0xdbff && i + 1 < length) {
+      const low = input.peek(i + 1)
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        text += String.fromCharCode(charCode, low)
+        i++ // Skip the low surrogate
+        continue
+      }
+    }
+    text += String.fromCharCode(charCode)
+  }
+  return text
+}
+
+// Consume word characters, tracking if it remains a valid identifier
+// Returns the position after consuming, whether it's a valid identifier, and if we stopped at a dot
+const consumeWordToken = (
+  input: InputStream,
+  isValidStart: boolean,
+  canBeWord: boolean
+): { pos: number; isValidIdentifier: boolean; stoppedAtDot: boolean } => {
+  let pos = getCharSize(getFullCodePoint(input, 0))
+  let isValidIdentifier = isValidStart
+  let stoppedAtDot = false
+
+  while (true) {
+    const ch = getFullCodePoint(input, pos)
+
+    // Stop at dot if we have a valid identifier (might be property access)
+    if (ch === 46 /* . */ && isValidIdentifier) {
+      stoppedAtDot = true
+      break
+    }
+
+    // Stop if we hit a non-word character
+    if (!isWordChar(ch)) break
+
+    // Context-aware termination: semicolon/colon can end a word if followed by whitespace
+    // This allows `hello; 2` to parse correctly while `hello;world` stays as one word
+    if (canBeWord && (ch === 59 /* ; */ || ch === 58) /* : */) {
+      const nextCh = getFullCodePoint(input, pos + 1)
+      if (!isWordChar(nextCh)) break
+    }
+
+    // Track identifier validity: must be lowercase, digit, dash, or emoji
+    if (!isLowercaseLetter(ch) && !isDigit(ch) && ch !== 45 /* - */ && !isEmoji(ch)) {
+      if (!canBeWord) break
+      isValidIdentifier = false
+    }
+
+    pos += getCharSize(ch)
+  }
+
+  return { pos, isValidIdentifier, stoppedAtDot }
+}
+
+// Consume the rest of a word after we've decided not to treat a dot as DotGet
+// Used when we have "file.txt" - we already consumed "file", now consume ".txt"
+const consumeRestOfWord = (input: InputStream, startPos: number, canBeWord: boolean): number => {
+  let pos = startPos
+  while (true) {
+    const ch = getFullCodePoint(input, pos)
+
+    // Stop if we hit a non-word character
+    if (!isWordChar(ch)) break
+
+    // Context-aware termination for semicolon/colon
+    if (canBeWord && (ch === 59 /* ; */ || ch === 58) /* : */) {
+      const nextCh = getFullCodePoint(input, pos + 1)
+      if (!isWordChar(nextCh)) break
+    }
+
+    pos += getCharSize(ch)
+  }
+  return pos
+}
+
+// Check if this identifier is in scope (for property access detection)
+// Returns IdentifierBeforeDot token if in scope, null otherwise
+const checkForDotGet = (input: InputStream, stack: Stack, pos: number): number | null => {
+  const identifierText = buildIdentifierText(input, pos)
+  const scopeContext = stack.context as ScopeContext | undefined
+  const scope = scopeContext?.scope
+
+  // If identifier is in scope, this is property access (e.g., obj.prop)
+  // If not in scope, it should be consumed as a Word (e.g., file.txt)
+  return scope?.has(identifierText) ? IdentifierBeforeDot : null
+}
+
+// Decide between AssignableIdentifier and Identifier using grammar state + peek-ahead
+const chooseIdentifierToken = (input: InputStream, stack: Stack): number => {
+  const canAssignable = stack.canShift(AssignableIdentifier)
+  const canRegular = stack.canShift(Identifier)
+
+  // Only one option is valid - use it
+  if (canAssignable && !canRegular) return AssignableIdentifier
+  if (canRegular && !canAssignable) return Identifier
+
+  // Both possible (ambiguous context) - peek ahead for '=' to disambiguate
+  // This happens at statement start where both `x = 5` (assign) and `echo x` (call) are valid
+  let peekPos = 0
+  while (true) {
+    const ch = getFullCodePoint(input, peekPos)
+    if (isWhiteSpace(ch)) {
+      peekPos += getCharSize(ch)
+    } else {
+      break
+    }
+  }
+
+  const nextCh = getFullCodePoint(input, peekPos)
+  return nextCh === 61 /* = */ ? AssignableIdentifier : Identifier
+}
+
+// Character classification helpers
 const isWhiteSpace = (ch: number): boolean => {
-  return ch === 32 /* space */ || ch === 10 /* \n */ || ch === 9 /* tab */ || ch === 13 /* \r */
+  return ch === 32 /* space */ || ch === 9 /* tab */ || ch === 13 /* \r */
 }
 
 const isWordChar = (ch: number): boolean => {
-  const closingParen = ch === 41 /* ) */
-  const eof = ch === -1
-
-  return !isWhiteSpace(ch) && !closingParen && !eof
+  return !isWhiteSpace(ch) && ch !== 10 /* \n */ && ch !== 41 /* ) */ && ch !== -1 /* EOF */
 }
 
 const isLowercaseLetter = (ch: number): boolean => {
@@ -154,7 +201,7 @@ const getFullCodePoint = (input: InputStream, pos: number): number => {
     }
   }
 
-  return ch // Single code unit
+  return ch
 }
 
 const isEmoji = (ch: number): boolean => {
