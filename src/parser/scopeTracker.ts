@@ -5,21 +5,7 @@ export class Scope {
   constructor(public parent: Scope | null, public vars = new Set<string>()) {}
 
   has(name: string): boolean {
-    return this.vars.has(name) ?? this.parent?.has(name)
-  }
-
-  add(...names: string[]): Scope {
-    const newVars = new Set(this.vars)
-    names.forEach((name) => newVars.add(name))
-    return new Scope(this.parent, newVars)
-  }
-
-  push(): Scope {
-    return new Scope(this)
-  }
-
-  pop(): Scope {
-    return this.parent ?? this
+    return this.vars.has(name) || (this.parent?.has(name) ?? false)
   }
 
   hash(): number {
@@ -36,35 +22,27 @@ export class Scope {
     }
     return h
   }
+
+  // Static methods that return new Scopes (immutable operations)
+
+  static add(scope: Scope, ...names: string[]): Scope {
+    const newVars = new Set(scope.vars)
+    names.forEach((name) => newVars.add(name))
+    return new Scope(scope.parent, newVars)
+  }
+
+  push(): Scope {
+    return new Scope(this, new Set())
+  }
+
+  pop(): Scope {
+    return this.parent ?? this
+  }
 }
 
-// Wrapper that adds temporary state for identifier capture
-export class ScopeContext {
+// Tracker context that combines Scope with temporary pending identifiers
+class TrackerContext {
   constructor(public scope: Scope, public pendingIds: string[] = []) {}
-
-  // Helper to append identifier to pending list
-  withPending(id: string): ScopeContext {
-    return new ScopeContext(this.scope, [...this.pendingIds, id])
-  }
-
-  // Helper to consume last pending identifier and add to scope
-  consumeLast(): ScopeContext {
-    const varName = this.pendingIds.at(-1)
-    if (!varName) return this
-    return new ScopeContext(this.scope.add(varName), this.pendingIds.slice(0, -1))
-  }
-
-  // Helper to consume all pending identifiers and add to new scope
-  consumeAll(): ScopeContext {
-    let newScope = this.scope.push()
-    newScope = this.pendingIds.length > 0 ? newScope.add(...this.pendingIds) : newScope
-    return new ScopeContext(newScope)
-  }
-
-  // Helper to clear pending without adding to scope
-  clearPending(): ScopeContext {
-    return new ScopeContext(this.scope)
-  }
 }
 
 // Extract identifier text from input stream
@@ -79,23 +57,36 @@ const readIdentifierText = (input: InputStream, start: number, end: number): str
   return text
 }
 
-export const trackScope = new ContextTracker<ScopeContext>({
-  start: new ScopeContext(new Scope(null, new Set())),
+export const trackScope = new ContextTracker<TrackerContext>({
+  start: new TrackerContext(new Scope(null, new Set())),
 
   shift(context, term, stack, input) {
     if (term !== terms.AssignableIdentifier) return context
 
     const text = readIdentifierText(input, input.pos, stack.pos)
-    return context.withPending(text)
+    return new TrackerContext(context.scope, [...context.pendingIds, text])
   },
 
   reduce(context, term) {
-    if (term === terms.Assign) return context.consumeLast()
-    if (term === terms.Params) return context.consumeAll()
+    // Add assignment variable to scope
+    if (term === terms.Assign) {
+      const varName = context.pendingIds.at(-1)
+      if (!varName) return context
+      return new TrackerContext(Scope.add(context.scope, varName), context.pendingIds.slice(0, -1))
+    }
+
+    // Push new scope and add all parameters
+    if (term === terms.Params) {
+      let newScope = context.scope.push()
+      if (context.pendingIds.length > 0) {
+        newScope = Scope.add(newScope, ...context.pendingIds)
+      }
+      return new TrackerContext(newScope, [])
+    }
 
     // Pop scope when exiting function
     if (term === terms.FunctionDef) {
-      return new ScopeContext(context.scope.pop())
+      return new TrackerContext(context.scope.pop(), [])
     }
 
     return context

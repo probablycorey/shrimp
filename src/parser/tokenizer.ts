@@ -1,6 +1,5 @@
 import { ExternalTokenizer, InputStream, Stack } from '@lezer/lr'
 import { Identifier, AssignableIdentifier, Word, IdentifierBeforeDot } from './shrimp.terms'
-import type { ScopeContext } from './scopeTracker'
 
 // The only chars that can't be words are whitespace, apostrophes, closing parens, and EOF.
 
@@ -138,12 +137,11 @@ const consumeRestOfWord = (input: InputStream, startPos: number, canBeWord: bool
 // Returns IdentifierBeforeDot token if in scope, null otherwise
 const checkForDotGet = (input: InputStream, stack: Stack, pos: number): number | null => {
   const identifierText = buildIdentifierText(input, pos)
-  const scopeContext = stack.context as ScopeContext | undefined
-  const scope = scopeContext?.scope
+  const context = stack.context as { scope: { has(name: string): boolean } } | undefined
 
   // If identifier is in scope, this is property access (e.g., obj.prop)
   // If not in scope, it should be consumed as a Word (e.g., file.txt)
-  return scope?.has(identifierText) ? IdentifierBeforeDot : null
+  return context?.scope.has(identifierText) ? IdentifierBeforeDot : null
 }
 
 // Decide between AssignableIdentifier and Identifier using grammar state + peek-ahead
